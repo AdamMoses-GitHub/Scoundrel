@@ -45,9 +45,17 @@
 
                 <h3>Card Interactions (If You Stay)</h3>
                 <ul>
-                    <li><strong>Monster:</strong> Take damage = Monster Value - Your Weapon Value (minimum 0)</li>
-                    <li><strong>Weapon:</strong> Equip it (replacing any previous weapon)</li>
+                    <li><strong>Monster:</strong> Choose to fight with weapon or barehanded. Damage = Monster Value - Weapon Value (minimum 0)</li>
+                    <li><strong>Weapon:</strong> Equip it (replaces previous weapon). Resets any degradation.</li>
                     <li><strong>Potion:</strong> Heal for its value (only first potion in room works; others ignored)</li>
+                </ul>
+
+                <h3>Weapon Degradation</h3>
+                <ul>
+                    <li>Once a weapon is used on a monster, it can <strong>only be used on weaker monsters</strong> going forward</li>
+                    <li><strong>Example:</strong> Use a Diamond 5 on a Jack (11) → weapon locked at value 11 → next monster of value 12 appears → cannot use weapon, must fight barehanded</li>
+                    <li>Equipping a new weapon <strong>resets degradation</strong> (new weapon starts fresh)</li>
+                    <li>Strategy: Don't waste high-value weapons on weak monsters, and upgrade to better weapons when available</li>
                 </ul>
 
                 <h3>Fleeing Rules</h3>
