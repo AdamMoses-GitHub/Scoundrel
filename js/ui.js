@@ -75,6 +75,7 @@ const weaponDisplay = document.getElementById('weaponDisplay');
 
 // Game log tracking
 let gameLog = [];
+let discardPileOrder = 'newest'; // 'newest' (most recent first) or 'oldest' (oldest first)
 
 // Game phase content areas
 const roomDecisionContent = document.getElementById('roomDecisionContent');
@@ -175,9 +176,8 @@ function updateGameDisplay() {
 function updateStatsBar() {
     const game = getGame();
     const status = game.getPlayerStatus();
-    // Discard count = Total (DECK_SIZE) - Deck remaining - Cards in play
-    const cardsInPlay = game.currentRoom ? GAME_CONSTANTS.CARDS_PER_ROOM : 0;
-    const discardCount = GAME_CONSTANTS.DECK_SIZE - status.deckRemaining - cardsInPlay;
+    // Discard count is now calculated in getPlayerStatus()
+    const discardCount = status.discardCount;
 
     statsBar.innerHTML = `
         <div class="stat-item">
@@ -542,6 +542,57 @@ function toggleLogModal() {
     if (dropdown) {
         dropdown.classList.remove('show');
     }
+}
+
+function toggleDiscardModal() {
+    const modal = document.getElementById('discardModal');
+    modal.classList.toggle('show');
+    
+    if (modal.classList.contains('show')) {
+        updateDiscardPileDisplay();
+    }
+    
+    // Close dropdown when opening discard modal
+    const dropdown = document.getElementById('menuDropdownContent');
+    if (dropdown) {
+        dropdown.classList.remove('show');
+    }
+}
+
+function toggleDiscardOrder() {
+    discardPileOrder = discardPileOrder === 'newest' ? 'oldest' : 'newest';
+    updateDiscardPileDisplay();
+}
+
+function updateDiscardPileDisplay() {
+    const game = getGame();
+    const discardPile = game.getDiscardPile();
+    const discardContent = document.getElementById('discardContent');
+    
+    if (discardPile.length === 0) {
+        discardContent.innerHTML = '<div class="log-entry">Discard pile is empty.</div>';
+        return;
+    }
+    
+    const orderedPile = discardPileOrder === 'newest' ? discardPile : [...discardPile].reverse();
+    const orderLabel = discardPileOrder === 'newest' ? '(Most Recent → Oldest)' : '(Oldest → Most Recent)';
+    
+    let html = `<div style="text-align: center; margin-bottom: 15px; color: var(--text-secondary); font-size: 0.9em;">${orderLabel}</div>`;
+    html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">';
+    
+    orderedPile.forEach((card, index) => {
+        const suitClass = getSuitClass(card.suit);
+        html += `
+            <div class="discard-entry ${suitClass}">
+                <div class="discard-rank">${card.rank}</div>
+                <div class="discard-suit">${card.suit}</div>
+                <div class="discard-name">${card.name}</div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    discardContent.innerHTML = html;
 }
 
 // Close dropdown when clicking outside

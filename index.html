@@ -93,6 +93,7 @@
             <!-- Menu dropdown content (positioned relative to stats bar) -->
             <div id="menuDropdownContent" class="dropdown-content">
                 <a onclick="toggleLogModal()">📋 View Log</a>
+                <a onclick="toggleDiscardModal()">🗑️ View Discard</a>
                 <a onclick="exitToMenu()">← Exit to Menu</a>
             </div>
             
@@ -117,6 +118,22 @@
                         <button class="modal-close" onclick="toggleLogModal()">✕</button>
                     </div>
                     <div id="logContent" class="modal-body"></div>
+                </div>
+            </div>
+
+            <!-- Discard pile modal popup -->
+            <div id="discardModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Discard Pile</h2>
+                        <button class="modal-close" onclick="toggleDiscardModal()">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <button onclick="toggleDiscardOrder()" style="padding: 8px 16px; font-size: 0.9em;">Reverse Order</button>
+                        </div>
+                        <div id="discardContent" class="modal-body"></div>
+                    </div>
                 </div>
             </div>
         </div>

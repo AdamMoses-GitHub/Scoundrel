@@ -321,6 +321,54 @@ button:disabled {
     border-bottom: none;
 }
 
+.discard-entry {
+    background-color: var(--bg-dark);
+    border: 1px solid var(--border-gold);
+    border-radius: 4px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    transition: all 0.2s ease;
+}
+
+.discard-entry:hover {
+    background-color: rgba(212, 175, 55, 0.1);
+}
+
+.discard-rank {
+    font-size: 1.4em;
+    color: var(--accent-gold);
+    font-weight: bold;
+}
+
+.discard-suit {
+    font-size: 1.8em;
+    margin: 5px 0;
+}
+
+.discard-entry.spades .discard-suit,
+.discard-entry.clubs .discard-suit {
+    color: #000;
+}
+
+.discard-entry.diamonds .discard-suit {
+    color: #c41e3a;
+}
+
+.discard-entry.hearts .discard-suit {
+    color: #c41e3a;
+}
+
+.discard-name {
+    font-size: 0.65em;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 5px;
+}
+
 /* Stats bar */
 #statsBar {
     background-color: var(--bg-card);
@@ -469,7 +517,7 @@ button:disabled {
     min-height: 120px;
     flex-wrap: wrap;
     max-width: 1000px;
-    margin: 0 auto;
+    margin: 40px auto 0 auto;
     width: 100%;
     box-sizing: border-box;
 }

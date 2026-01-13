@@ -154,6 +154,7 @@ class Player {
         this.weaponDefeatedMonsters = []; // Tracks all monsters defeated by current weapon
         this.usedPotionThisRoom = false;
         this.roomNumber = 0;
+        this.discardedCards = []; // Tracks all cards discarded from play (includes replaced weapons)
     }
 
     isAlive() {
@@ -173,6 +174,10 @@ class Player {
     }
 
     equipWeapon(card) {
+        // If replacing an existing weapon, add it to discarded cards
+        if (this.equippedWeapon) {
+            this.discardedCards.push(this.equippedWeapon);
+        }
         this.equippedWeapon = card;
         this.weaponMaxMonsterValue = null; // Reset degradation when equipping new weapon
         this.weaponDefeatedMonsters = []; // Reset defeated monsters list
@@ -241,6 +246,7 @@ class Game {
         this.won = false;
         this.message = '';
         this.ranLastRoom = false;
+        this.discardPile = []; // Array of cards discarded from rooms (most recent at index 0)
     }
 
     start() {
@@ -250,11 +256,36 @@ class Game {
         this.won = false;
         this.message = `Welcome to Scoundrel! Survive all ${GAME_CONSTANTS.DECK_SIZE} cards with HP > 0.`;
         this.ranLastRoom = false;
+        this.discardPile = [];
         this.enterNextRoom();
+    }
+
+    discardCard(card) {
+        // Add card to discard pile (most recent at front)
+        this.discardPile.unshift(card);
     }
 
     enterNextRoom() {
         if (this.gameOver) return;
+
+        // Before moving to next room, discard cards from previous room
+        if (this.currentRoom && this.currentRoom.roomComplete) {
+            // Room was completed - discard all processed cards except the carried-over one
+            const carryOverIndex = this.currentRoom.cards.findIndex((_, i) => !this.currentRoom.processedIndices.includes(i));
+            this.currentRoom.cards.forEach((card, index) => {
+                // Don't discard the carried-over card or weapons that are currently equipped
+                if (index === carryOverIndex) {
+                    // This card is carried to next room, don't discard
+                    return;
+                }
+                if (card.isWeapon() && card === this.player.equippedWeapon) {
+                    // This is the currently equipped weapon, don't discard
+                    return;
+                }
+                // All other cards (monsters, potions, weapons not equipped) are discarded
+                this.discardCard(card);
+            });
+        }
 
         this.player.roomNumber += 1;
         this.player.resetRoomState();
@@ -267,7 +298,39 @@ class Game {
             return;
         }
 
-        const roomCards = this.deck.draw(4);
+        // Determine room cards: carry over the unprocessed card from previous room if available
+        // But NOT if we just fled (ranLastRoom is already true at this point)
+        let roomCards;
+        let carryOverCard = null;
+        let carryOverIndex = -1;
+        
+        if (!this.ranLastRoom && this.currentRoom) {
+            // Only carry over if we didn't just flee and there's a previous room
+            // Find the unprocessed card from the previous room
+            carryOverIndex = this.currentRoom.cards.findIndex((_, i) => !this.currentRoom.processedIndices.includes(i));
+            if (carryOverIndex !== -1) {
+                carryOverCard = this.currentRoom.cards[carryOverIndex];
+                // Draw 3 new cards
+                const newCards = this.deck.draw(3);
+                // Build new room with carried card in same position
+                roomCards = [];
+                let newCardIndex = 0;
+                for (let i = 0; i < 4; i++) {
+                    if (i === carryOverIndex) {
+                        roomCards[i] = carryOverCard;
+                    } else {
+                        roomCards[i] = newCards[newCardIndex++];
+                    }
+                }
+            } else {
+                // No unprocessed card to carry over, draw 4 new cards
+                roomCards = this.deck.draw(4);
+            }
+        } else {
+            // Draw 4 new cards if this is the first room or if we just fled
+            roomCards = this.deck.draw(4);
+        }
+        
         this.currentRoom = new Room(roomCards);
         
         // If player fled last room, they must stay this room (auto-stay, no chooser shown)
@@ -277,7 +340,8 @@ class Game {
             this.message = `Room ${this.player.roomNumber}: You drew 4 cards.\n⚠️ You fled last room - you cannot flee again!`;
         } else {
             this.gameState = 'room-decision';
-            this.message = `Room ${this.player.roomNumber}: You drew 4 cards.`;
+            const carryMessage = carryOverCard ? `\n♻️ Carried over: ${carryOverCard.getName()}` : '';
+            this.message = `Room ${this.player.roomNumber}: You drew 4 cards.${carryMessage}`;
         }
     }
 
@@ -359,11 +423,13 @@ class Game {
 
         // Check if all interaction cards have been processed
         if (remaining === 0) {
-            // Find the unprocessed card
-            const unprocessedCard = this.currentRoom.cards.find((_, i) => !this.currentRoom.processedIndices.includes(i));
-            this.message += `\n\nRoom complete! Discarded: ${unprocessedCard.getName()}`;
+            // All 3 cards processed - mark room as complete
+            // Discarding happens when entering next room
+            this.message += `\n\nRoom complete!`;
             this.message += `\nStatus: ${this.player.hp}/${this.player.maxHp} HP | Deck: ${this.deck.remaining()} cards`;
             this.gameState = 'room-complete';
+            // Mark room as complete for discard handling in enterNextRoom
+            this.currentRoom.roomComplete = true;
             // Reset the "fled last room" flag since we completed this room normally
             this.ranLastRoom = false;
         } else {
@@ -421,9 +487,8 @@ class Game {
         
         // If all interaction cards have been processed, prepare room complete info
         if (remaining === 0) {
-            // This info will be shown when transitioning to room-complete
-            const unprocessedCard = this.currentRoom.cards.find((_, i) => !this.currentRoom.processedIndices.includes(i));
-            this.currentRoom.discardedCard = unprocessedCard;
+            // All 3 cards processed - mark room as complete
+            // Discarding happens when entering next room
             this.currentRoom.roomComplete = true;
             this.ranLastRoom = false;
         }
@@ -459,6 +524,10 @@ class Game {
     }
 
     getPlayerStatus() {
+        // Discard count is simply the size of the discard pile
+        // Accounting: Deck + Discard + Room cards + Equipped weapon = 44 total
+        const discardCount = this.discardPile.length;
+        
         return {
             hp: this.player.hp,
             maxHp: this.player.maxHp,
@@ -467,6 +536,7 @@ class Game {
             weaponMaxValue: this.player.weaponMaxMonsterValue,
             weaponDefeatedMonsters: this.player.weaponDefeatedMonsters,
             deckRemaining: this.deck.remaining(),
+            discardCount: discardCount,
             canRun: !this.ranLastRoom
         };
     }
@@ -478,6 +548,16 @@ class Game {
             name: c.getName(),
             toString: c.toString()
         })) : [];
+    }
+
+    getDiscardPile() {
+        // Return discard pile from most recent to oldest
+        return this.discardPile.map(c => ({
+            suit: c.suit,
+            rank: c.rank,
+            name: c.getName(),
+            toString: c.toString()
+        }));
     }
 
     getGameOverStats() {
