@@ -87,17 +87,14 @@
 
         <!-- Game Screen -->
         <div id="gameScreen" class="screen">
-            <!-- Menu dropdown -->
-            <div class="menu-dropdown">
-                <button class="menu-button" onclick="toggleMenuDropdown()" title="Menu">☰</button>
-                <div id="menuDropdownContent" class="dropdown-content">
-                    <a onclick="toggleLogModal()">📋 View Log</a>
-                    <a onclick="exitToMenu()">← Exit to Menu</a>
-                </div>
-            </div>
-            
             <!-- Stats bar: always visible during game -->
             <div id="statsBar"></div>
+            
+            <!-- Menu dropdown content (positioned relative to stats bar) -->
+            <div id="menuDropdownContent" class="dropdown-content">
+                <a onclick="toggleLogModal()">📋 View Log</a>
+                <a onclick="exitToMenu()">← Exit to Menu</a>
+            </div>
             
             <!-- Interaction count line: always visible while in a room -->
             <div id="interactionCountLine"></div>

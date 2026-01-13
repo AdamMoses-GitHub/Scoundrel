@@ -160,6 +160,9 @@ function updateStatsBar() {
             <span class="stat-label">Discard</span>
             <span class="stat-value">${discardCount}</span>
         </div>
+        <div class="stat-item menu-stat-item">
+            <button class="menu-button" onclick="toggleMenuDropdown()" title="Menu">☰</button>
+        </div>
     `;
 
     // Update HP bar color
