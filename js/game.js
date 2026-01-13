@@ -254,8 +254,16 @@ class Game {
 
         const roomCards = this.deck.draw(4);
         this.currentRoom = new Room(roomCards);
-        this.gameState = 'room-decision';
-        this.message = `Room ${this.player.roomNumber}: You drew 4 cards.`;
+        
+        // If player fled last room, they must stay this room (auto-stay, no chooser shown)
+        if (this.ranLastRoom) {
+            this.currentRoom.decidedToStay = true;
+            this.gameState = 'card-interaction';
+            this.message = `Room ${this.player.roomNumber}: You drew 4 cards.\n⚠️ You fled last room - you cannot flee again!`;
+        } else {
+            this.gameState = 'room-decision';
+            this.message = `Room ${this.player.roomNumber}: You drew 4 cards.`;
+        }
     }
 
     declareRun() {

@@ -269,6 +269,11 @@ function displayCardInteraction() {
     });
     cardsHtml += '</div>';
     
+    // Add warning message below cards if this is the beginning of card interaction (just entered from forced stay)
+    if (processedIndices.length === 0 && game.ranLastRoom) {
+        cardsHtml += '<div class="flee-warning">⚠️ You fled last room - you cannot flee again!</div>';
+    }
+    
     // If room is complete, add next room button
     if (game.currentRoom.roomComplete) {
         cardsHtml += `<div class="room-complete-button"><button onclick="nextRoom()">→ NEXT ROOM</button></div>`;
