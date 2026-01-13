@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoundrel - Deck Dungeon Crawler</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- Main Menu Screen -->
+        <div id="mainMenu" class="screen active">
+            <h1>⚔️ SCOUNDREL ⚔️</h1>
+            <p>A deadly card-based dungeon. Draw strength from steel and healing from nature. But beware – flee twice in a row and you'll be locked in for the next battle.</p>
+            <div class="button-group">
+                <button onclick="startGame()">🎲 START GAME</button>
+                <button onclick="showInstructionsFromMenu()">📖 INSTRUCTIONS</button>
+            </div>
+        </div>
+
+        <!-- Instructions Screen -->
+        <div id="instructions" class="screen">
+            <h2>How to Play</h2>
+            <div class="instructions-content">
+                <h3>The Goal</h3>
+                <ul>
+                    <li>Survive all 44 cards with your health above 0</li>
+                    <li>You start with 20 HP</li>
+                </ul>
+
+                <h3>The Deck</h3>
+                <ul>
+                    <li><strong>Monsters (26):</strong> Black cards (Spades 2-Ace, Clubs 2-Ace) - each deals damage equal to its value</li>
+                    <li><strong>Weapons (9):</strong> Diamonds 2-10 - equip to reduce monster damage</li>
+                    <li><strong>Potions (9):</strong> Hearts 2-10 - heal for the card's value (one per room only)</li>
+                </ul>
+
+                <h3>Each Room</h3>
+                <ul>
+                    <li>Four cards are drawn</li>
+                    <li><strong>Decide:</strong> You can Flee or Stay</li>
+                    <li><strong>If Flee:</strong> All 4 cards go to the bottom of the deck. Cannot flee again next room!</li>
+                    <li><strong>If Stay:</strong> Choose 3 of 4 cards to interact with (1 auto-discards)</li>
+                </ul>
+
+                <h3>Card Interactions (If You Stay)</h3>
+                <ul>
+                    <li><strong>Monster:</strong> Take damage = Monster Value - Your Weapon Value (minimum 0)</li>
+                    <li><strong>Weapon:</strong> Equip it (replacing any previous weapon)</li>
+                    <li><strong>Potion:</strong> Heal for its value (only first potion in room works; others ignored)</li>
+                </ul>
+
+                <h3>Fleeing Rules</h3>
+                <ul>
+                    <li>You <strong>cannot flee twice in a row</strong> - you must face the next room</li>
+                    <li>You can flee any other time</li>
+                    <li>When you stay and complete a room normally, the "fled last room" flag resets</li>
+                </ul>
+
+                <h3>Victory & Defeat</h3>
+                <ul>
+                    <li><strong>Victory:</strong> Defeat all 44 cards with HP remaining</li>
+                    <li><strong>Defeat:</strong> Your HP drops to 0 or below</li>
+                </ul>
+
+                <h3>Strategy Tips</h3>
+                <ul>
+                    <li>Better weapons significantly reduce damage - prioritize them early</li>
+                    <li>Potions are valuable but limited - save them for critical situations</li>
+                    <li>Fleeing can save you from tough hands, but resets your deck position</li>
+                    <li>High monsters early are deadly barehanded - focus on weapons</li>
+                </ul>
+
+                <div class="button-group" style="margin-top: 40px;">
+                    <button onclick="backToMenu()">↩️ BACK TO MENU</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="screen">
+            <!-- Menu dropdown -->
+            <div class="menu-dropdown">
+                <button class="menu-button" onclick="toggleMenuDropdown()" title="Menu">☰</button>
+                <div id="menuDropdownContent" class="dropdown-content">
+                    <a onclick="toggleLogModal()">📋 View Log</a>
+                    <a onclick="exitToMenu()">← Exit to Menu</a>
+                </div>
+            </div>
+            
+            <!-- Stats bar: always visible during game -->
+            <div id="statsBar"></div>
+            
+            <!-- Interaction count line: always visible while in a room -->
+            <div id="interactionCountLine"></div>
+
+            <!-- Game content: changes based on phase -->
+            <div id="gameContent">
+                <div id="roomDecisionContent"></div>
+                <div id="cardInteractionContent"></div>
+                <div id="roomCompleteContent"></div>
+            </div>
+
+            <!-- Equipped weapon display -->
+            <div id="weaponDisplay"></div>
+            
+            <!-- Log modal popup -->
+            <div id="logModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Combat Log</h2>
+                        <button class="modal-close" onclick="toggleLogModal()">✕</button>
+                    </div>
+                    <div id="logContent" class="modal-body"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="screen"></div>
+    </div>
+
+    <!-- Game Engine -->
+    <script src="js/game.js"></script>
+    <!-- UI Controller -->
+    <script src="js/ui.js"></script>
+</body>
+</html>
