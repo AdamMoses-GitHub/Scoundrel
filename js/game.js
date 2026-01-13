@@ -4,6 +4,21 @@
  */
 
 /**
+ * Game Constants
+ * Centralized values for game configuration
+ */
+const GAME_CONSTANTS = {
+    STARTING_HP: 20,
+    MAX_HP: 20,
+    CARDS_PER_ROOM: 4,
+    CARDS_TO_INTERACT: 3,
+    DECK_SIZE: 44,
+    MAX_RANK: 14,          // Ace value
+    WEAPON_MAX_RANK: 10,   // Highest weapon card
+    MIN_RANK: 2            // Lowest card value
+};
+
+/**
  * Utility function - Fisher-Yates shuffle
  * Shuffles array in-place
  */
@@ -89,17 +104,17 @@ class Deck {
     }
 
     initializeDeck() {
-        // All Black cards (Spades/Clubs 2-14) = Monsters (26 cards)
-        for (let rank = 2; rank <= 14; rank++) {
+        // All Black cards (Spades/Clubs 2-Ace) = Monsters (26 cards)
+        for (let rank = GAME_CONSTANTS.MIN_RANK; rank <= GAME_CONSTANTS.MAX_RANK; rank++) {
             this.cards.push(new Card(Suit.SPADES, rank));
             this.cards.push(new Card(Suit.CLUBS, rank));
         }
         // All Diamonds (2-10) = Weapons (9 cards)
-        for (let rank = 2; rank <= 10; rank++) {
+        for (let rank = GAME_CONSTANTS.MIN_RANK; rank <= GAME_CONSTANTS.WEAPON_MAX_RANK; rank++) {
             this.cards.push(new Card(Suit.DIAMONDS, rank));
         }
         // All Hearts (2-10) = Potions (9 cards)
-        for (let rank = 2; rank <= 10; rank++) {
+        for (let rank = GAME_CONSTANTS.MIN_RANK; rank <= GAME_CONSTANTS.WEAPON_MAX_RANK; rank++) {
             this.cards.push(new Card(Suit.HEARTS, rank));
         }
         // Total: 26 + 9 + 9 = 44 cards
@@ -132,8 +147,8 @@ class Deck {
  */
 class Player {
     constructor() {
-        this.hp = 20;
-        this.maxHp = 20;
+        this.hp = GAME_CONSTANTS.STARTING_HP;
+        this.maxHp = GAME_CONSTANTS.MAX_HP;
         this.equippedWeapon = null;
         this.weaponMaxMonsterValue = null; // Tracks the highest monster the weapon has been used on
         this.weaponDefeatedMonsters = []; // Tracks all monsters defeated by current weapon
@@ -201,14 +216,14 @@ class Player {
  */
 class Room {
     constructor(cards) {
-        if (cards.length !== 4) {
-            throw new Error('Room must have exactly 4 cards');
+        if (cards.length !== GAME_CONSTANTS.CARDS_PER_ROOM) {
+            throw new Error(`Room must have exactly ${GAME_CONSTANTS.CARDS_PER_ROOM} cards`);
         }
-        this.cards = cards; // 4 cards drawn
-        this.processedIndices = [];
-        this.decidedToStay = false;
+        this.cards = cards; // Cards drawn this room
+        this.processedIndices = []; // Indices of cards already interacted with
+        this.decidedToStay = false; // Whether player chose to stay
         this.selectedMonsterIndex = null; // Tracks which monster is being fought (for combat choice)
-        this.roomComplete = false; // Flag for when all 3 cards are processed
+        this.roomComplete = false; // Flag for when all interaction cards are processed
         this.discardedCard = null; // Stores the discarded card info
     }
 }
@@ -233,7 +248,7 @@ class Game {
         this.player = new Player();
         this.gameOver = false;
         this.won = false;
-        this.message = 'Welcome to Scoundrel! Survive all 44 cards with HP > 0.';
+        this.message = `Welcome to Scoundrel! Survive all ${GAME_CONSTANTS.DECK_SIZE} cards with HP > 0.`;
         this.ranLastRoom = false;
         this.enterNextRoom();
     }
@@ -266,7 +281,13 @@ class Game {
         }
     }
 
-    declareRun() {
+    fleeRoom() {
+        // Validate state
+        if (!this.currentRoom) {
+            this.message = '✗ No room to flee from!';
+            return false;
+        }
+        
         if (this.ranLastRoom) {
             this.message = '⚠️ Cannot flee twice in a row! You must face this room.';
             return false;
@@ -284,9 +305,10 @@ class Game {
     }
 
     selectAndProcessCard(cardIndex) {
-        // Initialize processedIndices if needed
-        if (this.currentRoom.processedIndices === undefined) {
-            this.currentRoom.processedIndices = [];
+        // Validate current room exists
+        if (!this.currentRoom) {
+            this.message = '✗ No room in progress!';
+            return false;
         }
 
         // Validate card index
@@ -333,9 +355,9 @@ class Game {
         // Mark card as processed
         this.currentRoom.processedIndices.push(cardIndex);
         const processed = this.currentRoom.processedIndices.length;
-        const remaining = 3 - processed;
+        const remaining = GAME_CONSTANTS.CARDS_TO_INTERACT - processed;
 
-        // Check if all 3 cards have been processed
+        // Check if all interaction cards have been processed
         if (remaining === 0) {
             // Find the unprocessed card
             const unprocessedCard = this.currentRoom.cards.find((_, i) => !this.currentRoom.processedIndices.includes(i));
@@ -353,6 +375,16 @@ class Game {
     }
 
     processCombatChoice(useWeapon) {
+        // Validate state before processing
+        if (!this.currentRoom) {
+            this.message = '✗ No room in progress!';
+            return false;
+        }
+        if (this.currentRoom.selectedMonsterIndex === null) {
+            this.message = '✗ No monster selected for combat!';
+            return false;
+        }
+
         const monsterIndex = this.currentRoom.selectedMonsterIndex;
         const card = this.currentRoom.cards[monsterIndex];
         
@@ -379,15 +411,15 @@ class Game {
         // Mark card as processed
         this.currentRoom.processedIndices.push(monsterIndex);
         const processed = this.currentRoom.processedIndices.length;
-        const remaining = 3 - processed;
+        const remaining = GAME_CONSTANTS.CARDS_TO_INTERACT - processed;
 
         // Always show processed count
         this.message += `\n(${processed} cards processed, ${remaining} remaining)`;
         
-        // Stay in card-interaction to show the progress, even if all 3 are done
+        // Stay in card-interaction to show the progress
         this.gameState = 'card-interaction';
         
-        // If all 3 cards have been processed, prepare room complete info
+        // If all interaction cards have been processed, prepare room complete info
         if (remaining === 0) {
             // This info will be shown when transitioning to room-complete
             const unprocessedCard = this.currentRoom.cards.find((_, i) => !this.currentRoom.processedIndices.includes(i));

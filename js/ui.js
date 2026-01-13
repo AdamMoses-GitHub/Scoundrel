@@ -23,6 +23,44 @@ function buildDefeatedMonstersHtml(weaponDefeatedMonsters, containerClass = 'wea
     return html;
 }
 
+/**
+ * Helper function - Build weapon display HTML
+ * Consolidates weapon card rendering for reuse across multiple UI sections
+ */
+function buildWeaponDisplayHtml(game, isCompact = false) {
+    const containerClass = isCompact ? 'weapon-display-wrapper' : '';
+    const monstersClass = isCompact ? 'weapon-monsters-small' : 'weapon-monsters';
+    
+    if (!game.player.equippedWeapon) {
+        return `
+            <div class="${containerClass}">
+                <div class="weapon-label">Equipped Weapon</div>
+                <div class="weapon-card empty">
+                    <div style="color: var(--text-secondary); font-size: 1.2em;">No Weapon</div>
+                    <div class="weapon-status">Barehanded</div>
+                </div>
+            </div>
+        `;
+    }
+
+    const weapon = game.player.equippedWeapon;
+    const status = game.getPlayerStatus();
+    const monstersListHtml = buildDefeatedMonstersHtml(status.weaponDefeatedMonsters, monstersClass);
+    
+    return `
+        <div class="${containerClass}">
+            <div class="weapon-label">Equipped Weapon</div>
+            <div class="weapon-card-container">
+                <div class="weapon-card diamonds">
+                    <div class="card-rank">${weapon.rank}</div>
+                    <div class="card-suit">♦️</div>
+                </div>
+                ${monstersListHtml}
+            </div>
+        </div>
+    `;
+}
+
 // Get elements
 const gameContainer = document.getElementById('gameContainer');
 const mainMenuScreen = document.getElementById('mainMenu');
@@ -137,8 +175,9 @@ function updateGameDisplay() {
 function updateStatsBar() {
     const game = getGame();
     const status = game.getPlayerStatus();
-    // Discard count = Total (44) - Deck remaining - 4 cards in play
-    const discardCount = 44 - status.deckRemaining - 4;
+    // Discard count = Total (DECK_SIZE) - Deck remaining - Cards in play
+    const cardsInPlay = game.currentRoom ? GAME_CONSTANTS.CARDS_PER_ROOM : 0;
+    const discardCount = GAME_CONSTANTS.DECK_SIZE - status.deckRemaining - cardsInPlay;
 
     statsBar.innerHTML = `
         <div class="stat-item">
@@ -180,39 +219,13 @@ function updateStatsBar() {
  */
 function updateWeaponDisplay() {
     const game = getGame();
-    const status = game.getPlayerStatus();
 
     // If in combat-choice state, don't update here (updateMonsterDisplay handles it)
     if (game.gameState === 'combat-choice') {
         return;
     }
 
-    if (!game.player.equippedWeapon) {
-        weaponDisplay.innerHTML = `
-            <div class="weapon-label">Equipped Weapon</div>
-            <div class="weapon-card empty">
-                <div style="color: var(--text-secondary); font-size: 1.2em;">No Weapon</div>
-                <div class="weapon-status">Barehanded</div>
-            </div>
-        `;
-        return;
-    }
-
-    const weapon = game.player.equippedWeapon;
-    
-    // Build monsters list HTML
-    const monstersListHtml = buildDefeatedMonstersHtml(status.weaponDefeatedMonsters, 'weapon-monsters');
-
-    weaponDisplay.innerHTML = `
-        <div class="weapon-label">Equipped Weapon</div>
-        <div class="weapon-card-container">
-            <div class="weapon-card diamonds">
-                <div class="card-rank">${weapon.rank}</div>
-                <div class="card-suit">♦️</div>
-            </div>
-            ${monstersListHtml}
-        </div>
-    `;
+    weaponDisplay.innerHTML = buildWeaponDisplayHtml(game, false);
 }
 
 /**
@@ -296,37 +309,8 @@ function updateMonsterDisplay() {
     const status = game.getPlayerStatus();
     const canUseWeapon = game.player.canUseWeaponOnMonster(monster.rank);
 
-    // Build weapon display HTML
-    let weaponHtml = '';
-    if (!game.player.equippedWeapon) {
-        weaponHtml = `
-            <div class="weapon-display-wrapper">
-                <div class="weapon-label">Equipped Weapon</div>
-                <div class="weapon-card empty">
-                    <div style="color: var(--text-secondary); font-size: 1.2em;">No Weapon</div>
-                    <div class="weapon-status">Barehanded</div>
-                </div>
-            </div>
-        `;
-    } else {
-        const weapon = game.player.equippedWeapon;
-        
-        // Build monsters list HTML
-        const monstersListHtml = buildDefeatedMonstersHtml(status.weaponDefeatedMonsters, 'weapon-monsters-small');
-        
-        weaponHtml = `
-            <div class="weapon-display-wrapper">
-                <div class="weapon-label">Equipped Weapon</div>
-                <div class="weapon-card-container">
-                    <div class="weapon-card diamonds">
-                        <div class="card-rank">${weapon.rank}</div>
-                        <div class="card-suit">♦️</div>
-                    </div>
-                    ${monstersListHtml}
-                </div>
-            </div>
-        `;
-    }
+    // Build weapon display HTML (compact version for combat choice)
+    const weaponHtml = buildWeaponDisplayHtml(game, true);
 
     // Create monster card display
     let html = weaponHtml;
@@ -439,7 +423,7 @@ function displayGameOver() {
  */
 function playerFlees() {
     const game = getGame();
-    if (game.declareRun()) {
+    if (game.fleeRoom()) {
         updateGameDisplay();
     } else {
         updateGameDisplay();
