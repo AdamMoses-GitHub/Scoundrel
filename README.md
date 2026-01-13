@@ -2,6 +2,8 @@
 
 A browser-based card game where you survive a 44-card deck by managing weapons, potions, and tough tactical decisions.
 
+This is a digital implementation of the classic card game [Scoundrel](http://www.stfj.net/art/2011/Scoundrel.pdf) by Sivan Tal, freely distributed under Creative Commons.
+
 ## Quick Start
 
 Open `index.html` in a web browser. Click **START GAME** and follow the on-screen instructions.

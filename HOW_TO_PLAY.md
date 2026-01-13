@@ -1,5 +1,7 @@
 # How to Play Scoundrel
 
+This is a digital implementation of the classic card game [Scoundrel](http://www.stfj.net/art/2011/Scoundrel.pdf) by Sivan Tal, freely distributed under Creative Commons. For the original rules, see the [PDF](http://www.stfj.net/art/2011/Scoundrel.pdf).
+
 ## Table of Contents
 1. [Getting Started](#getting-started)
 2. [The Basics](#the-basics)
