@@ -3,6 +3,26 @@
  * Handles all screen rendering and user interactions
  */
 
+/**
+ * Helper function - Build HTML for defeated monsters list
+ * Used in both weapon display and combat choice display
+ */
+function buildDefeatedMonstersHtml(weaponDefeatedMonsters, containerClass = 'weapon-monsters') {
+    const defeatedMonsters = [...weaponDefeatedMonsters].sort((a, b) => b.rank - a.rank);
+    if (defeatedMonsters.length === 0) {
+        return '<div class="weapon-status">Unused</div>';
+    }
+    let html = `<div class="${containerClass}">`;
+    defeatedMonsters.forEach((monster, index) => {
+        const isLowest = index === defeatedMonsters.length - 1;
+        const bold = isLowest ? '<strong>' : '';
+        const boldEnd = isLowest ? '</strong>' : '';
+        html += `<div class="monster-item${isLowest ? ' lowest' : ''}">${bold}${monster.rank}${monster.suit}${boldEnd}</div>`;
+    });
+    html += '</div>';
+    return html;
+}
+
 // Get elements
 const gameContainer = document.getElementById('gameContainer');
 const mainMenuScreen = document.getElementById('mainMenu');
@@ -177,25 +197,8 @@ function updateWeaponDisplay() {
 
     const weapon = game.player.equippedWeapon;
     
-    // Sort defeated monsters in descending order by rank
-    const defeatedMonsters = [...status.weaponDefeatedMonsters].sort((a, b) => b.rank - a.rank);
-    
     // Build monsters list HTML
-    let monstersListHtml = '';
-    if (defeatedMonsters.length > 0) {
-        monstersListHtml = '<div class="weapon-monsters">';
-        defeatedMonsters.forEach((monster, index) => {
-            if (index === defeatedMonsters.length - 1) {
-                // Last (lowest) monster in bold
-                monstersListHtml += `<div class="monster-item lowest"><strong>${monster.rank}${monster.suit}</strong></div>`;
-            } else {
-                monstersListHtml += `<div class="monster-item">${monster.rank}${monster.suit}</div>`;
-            }
-        });
-        monstersListHtml += '</div>';
-    } else {
-        monstersListHtml = '<div class="weapon-status">Unused</div>';
-    }
+    const monstersListHtml = buildDefeatedMonstersHtml(status.weaponDefeatedMonsters, 'weapon-monsters');
 
     weaponDisplay.innerHTML = `
         <div class="weapon-label">Equipped Weapon</div>
@@ -300,25 +303,8 @@ function updateMonsterDisplay() {
     } else {
         const weapon = game.player.equippedWeapon;
         
-        // Sort defeated monsters in descending order by rank
-        const defeatedMonsters = [...status.weaponDefeatedMonsters].sort((a, b) => b.rank - a.rank);
-        
         // Build monsters list HTML
-        let monstersListHtml = '';
-        if (defeatedMonsters.length > 0) {
-            monstersListHtml = '<div class="weapon-monsters-small">';
-            defeatedMonsters.forEach((monster, index) => {
-                if (index === defeatedMonsters.length - 1) {
-                    // Last (lowest) monster in bold
-                    monstersListHtml += `<div class="monster-item lowest"><strong>${monster.rank}${monster.suit}</strong></div>`;
-                } else {
-                    monstersListHtml += `<div class="monster-item">${monster.rank}${monster.suit}</div>`;
-                }
-            });
-            monstersListHtml += '</div>';
-        } else {
-            monstersListHtml = '<div class="weapon-status">Unused</div>';
-        }
+        const monstersListHtml = buildDefeatedMonstersHtml(status.weaponDefeatedMonsters, 'weapon-monsters-small');
         
         weaponHtml = `
             <div class="weapon-display-wrapper">

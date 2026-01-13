@@ -3,6 +3,17 @@
  * Core game logic and rules implementation
  */
 
+/**
+ * Utility function - Fisher-Yates shuffle
+ * Shuffles array in-place
+ */
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
 // Card suit and rank constants
 const Suit = {
     SPADES: '♠️',
@@ -96,10 +107,7 @@ class Deck {
 
     shuffle() {
         // Fisher-Yates shuffle
-        for (let i = this.cards.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
-        }
+        shuffleArray(this.cards);
     }
 
     draw(count = 1) {
@@ -193,6 +201,9 @@ class Player {
  */
 class Room {
     constructor(cards) {
+        if (cards.length !== 4) {
+            throw new Error('Room must have exactly 4 cards');
+        }
         this.cards = cards; // 4 cards drawn
         this.processedIndices = [];
         this.decidedToStay = false;
@@ -255,10 +266,7 @@ class Game {
 
         // Shuffle the cards and put to bottom of deck
         const fleedCards = [...this.currentRoom.cards];
-        for (let i = fleedCards.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [fleedCards[i], fleedCards[j]] = [fleedCards[j], fleedCards[i]];
-        }
+        shuffleArray(fleedCards);
         this.deck.pushToBottom(fleedCards);
         this.ranLastRoom = true;
 
