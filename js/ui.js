@@ -90,6 +90,12 @@ function showScreen(screenElement) {
         screen.classList.remove('active');
     });
     screenElement.classList.add('active');
+    
+    // Close any open dropdowns/modals when changing screens
+    const dropdown = document.getElementById('menuDropdownContent');
+    if (dropdown) {
+        dropdown.classList.remove('show');
+    }
 }
 
 function showMainMenu() {
@@ -281,7 +287,13 @@ function displayCardInteraction() {
     cards.forEach((card, index) => {
         const isProcessed = processedIndices.includes(index);
         const isClickable = !isProcessed && processedIndices.length < 3;
-        cardsHtml += createCardHTML(card, index, isClickable, isProcessed);
+        
+        if (isProcessed) {
+            // Show empty placeholder for processed cards
+            cardsHtml += `<div class="card empty-placeholder"></div>`;
+        } else {
+            cardsHtml += createCardHTML(card, index, isClickable, false);
+        }
     });
     cardsHtml += '</div>';
     
@@ -346,7 +358,7 @@ function updateMonsterDisplay() {
 
 /**
  * Display room complete phase
- * Shows all 4 cards with processed state, plus next room button
+ * Shows all 4 cards with processed cards as empty placeholders, plus next room button
  */
 function displayRoomComplete() {
     roomDecisionContent.classList.remove('active');
@@ -357,11 +369,17 @@ function displayRoomComplete() {
     const cards = game.getRoomCards();
     const processedIndices = game.currentRoom.processedIndices;
 
-    // Display all 4 cards
+    // Display all 4 cards, with empty placeholders for processed ones
     let cardsHtml = '<div class="cards-display">';
     cards.forEach((card, index) => {
         const isProcessed = processedIndices.includes(index);
-        cardsHtml += createCardHTML(card, index, false, isProcessed);
+        
+        if (isProcessed) {
+            // Show empty placeholder for processed cards
+            cardsHtml += `<div class="card empty-placeholder"></div>`;
+        } else {
+            cardsHtml += createCardHTML(card, index, false, false);
+        }
     });
     cardsHtml += '</div>';
 

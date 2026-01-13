@@ -736,6 +736,13 @@ button:disabled {
     cursor: not-allowed;
 }
 
+.card.empty-placeholder {
+    background-color: transparent;
+    border: 2px dashed var(--text-secondary);
+    opacity: 0.3;
+    cursor: default;
+}
+
 .card-rank {
     font-size: 1.8em;
     color: var(--accent-gold);

@@ -174,10 +174,7 @@ class Player {
     }
 
     equipWeapon(card) {
-        // If replacing an existing weapon, add it to discarded cards
-        if (this.equippedWeapon) {
-            this.discardedCards.push(this.equippedWeapon);
-        }
+        // Old weapon was already discarded in selectAndProcessCard() if replacing
         this.equippedWeapon = card;
         this.weaponMaxMonsterValue = null; // Reset degradation when equipping new weapon
         this.weaponDefeatedMonsters = []; // Reset defeated monsters list
@@ -268,21 +265,26 @@ class Game {
     enterNextRoom() {
         if (this.gameOver) return;
 
-        // Before moving to next room, discard cards from previous room
+        // Before moving to next room, discard remaining cards from previous room
         if (this.currentRoom && this.currentRoom.roomComplete) {
-            // Room was completed - discard all processed cards except the carried-over one
-            const carryOverIndex = this.currentRoom.cards.findIndex((_, i) => !this.currentRoom.processedIndices.includes(i));
+            // Room was completed - discard remaining cards that weren't processed or carried over
+            // First determine which card will be carried over (if not fleeing)
+            const carryOverIndex = !this.ranLastRoom ? this.currentRoom.cards.findIndex((_, i) => !this.currentRoom.processedIndices.includes(i)) : -1;
+            
             this.currentRoom.cards.forEach((card, index) => {
-                // Don't discard the carried-over card or weapons that are currently equipped
+                // Skip the carried-over card (unprocessed card from a successful room completion)
                 if (index === carryOverIndex) {
-                    // This card is carried to next room, don't discard
                     return;
                 }
+                // Skip already processed cards (monsters and potions were discarded when processed)
+                if (this.currentRoom.processedIndices.includes(index)) {
+                    return;
+                }
+                // Skip currently equipped weapon (it's in play, not discarded)
                 if (card.isWeapon() && card === this.player.equippedWeapon) {
-                    // This is the currently equipped weapon, don't discard
                     return;
                 }
-                // All other cards (monsters, potions, weapons not equipped) are discarded
+                // Discard any remaining cards
                 this.discardCard(card);
             });
         }
@@ -401,10 +403,17 @@ class Game {
         this.message = '';
 
         // Process weapons and potions
+        let oldWeapon = null;
         if (card.isWeapon()) {
-            const oldWeapon = this.player.equippedWeapon ? this.player.equippedWeapon.getName() : 'nothing';
+            oldWeapon = this.player.equippedWeapon; // Capture old weapon before replacing
             this.player.equipWeapon(card);
-            this.message += `🔫 Equipped ${card.getName()} (was ${oldWeapon})`;
+            const oldWeaponName = oldWeapon ? oldWeapon.getName() : 'nothing';
+            this.message += `🔫 Equipped ${card.getName()} (was ${oldWeaponName})`;
+            // If there was an old weapon, discard it immediately
+            if (oldWeapon) {
+                this.discardCard(oldWeapon);
+            }
+            // New weapon goes to equipped slot, not discarded
         } else if (card.isPotion()) {
             if (!this.player.usedPotionThisRoom) {
                 const healing = card.getValue();
@@ -414,6 +423,8 @@ class Game {
             } else {
                 this.message += `⚠️ Already used a potion this room, ${card.getName()} has no effect`;
             }
+            // Potions are immediately discarded
+            this.discardCard(card);
         }
 
         // Mark card as processed
@@ -424,7 +435,7 @@ class Game {
         // Check if all interaction cards have been processed
         if (remaining === 0) {
             // All 3 cards processed - mark room as complete
-            // Discarding happens when entering next room
+            // Remaining card(s) will be discarded when entering next room
             this.message += `\n\nRoom complete!`;
             this.message += `\nStatus: ${this.player.hp}/${this.player.maxHp} HP | Deck: ${this.deck.remaining()} cards`;
             this.gameState = 'room-complete';
@@ -474,6 +485,9 @@ class Game {
             return true;
         }
 
+        // Monster is immediately discarded after combat
+        this.discardCard(card);
+
         // Mark card as processed
         this.currentRoom.processedIndices.push(monsterIndex);
         const processed = this.currentRoom.processedIndices.length;
@@ -488,7 +502,7 @@ class Game {
         // If all interaction cards have been processed, prepare room complete info
         if (remaining === 0) {
             // All 3 cards processed - mark room as complete
-            // Discarding happens when entering next room
+            // Remaining card(s) will be discarded when entering next room
             this.currentRoom.roomComplete = true;
             this.ranLastRoom = false;
         }
