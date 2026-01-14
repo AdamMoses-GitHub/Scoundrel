@@ -10,8 +10,10 @@ Open `index.html` in a web browser. Click **START GAME** and follow the on-scree
 
 ## How It Works
 
-Each room, you draw 4 cards. Choose to **FLEE** (shuffle them to the deck bottom) or **STAY** (interact with 3 cards). 
+Each room, you draw up to 4 cards. In the final room (when fewer than 4 cards remain), you draw what's left. Choose to **FLEE** (shuffle them to the deck bottom) or **STAY** (interact with your cards). 
 
+- **Fleeing**: Cannot flee if you fled the previous room, and cannot flee a final room with fewer than 4 cards
+- **Staying**: Interact with 3 cards normally (1 auto-discards), or all cards in a final room
 - **Monsters**: Choose to fight with your equipped weapon or barehanded
 - **Weapons**: Equip to reduce monster damage (but weapons degrade against tougher monsters)
 - **Potions**: Heal HP (only the first potion per room works)

@@ -33,10 +33,10 @@ Survive all 44 cards with **HP > 0** to win the game.
 ## The Basics
 
 ### Each Room
-1. **Draw 4 cards** from the deck
+1. **Draw cards** from the deck (normally 4, but may be fewer in the final room)
 2. **Decide**: FLEE or STAY
-   - **FLEE**: Shuffle the 4 cards back to the bottom of the deck (avoids the room entirely)
-   - **STAY**: Interact with 3 of the 4 cards (the 4th is auto-discarded)
+   - **FLEE**: Shuffle the room's cards back to the bottom of the deck (avoids the room entirely). *Not allowed on the final room if it has fewer than 4 cards.*
+   - **STAY**: Interact with 3 of the room's cards (remaining cards auto-discard). On a final room with fewer cards, interact with all of them.
 3. **Apply card effects** (damage, healing, weapon equipping)
 4. **Proceed to next room** (if you survived)
 
@@ -100,22 +100,26 @@ Survive all 44 cards with **HP > 0** to win the game.
 
 ## Room Sequence
 
-### Step 1: Draw 4 Cards
-The 4 cards are revealed face-up. You can see all of them before deciding.
+### Step 1: Draw Cards
+Cards are revealed face-up. Normally you draw 4 cards, but in the final room(s) when fewer than 4 cards remain in the deck, you draw whatever is left.
 
 ### Step 2: Flee or Stay
 **FLEE Button**:
-- Shuffles all 4 cards to the bottom of the deck
+- Shuffles all room cards to the bottom of the deck
 - Immediately advances to the next room
 - **Cannot flee if you fled the previous room** (see Flee Limitation below)
+- **Cannot flee if this is a final room with fewer than 4 cards** (you must complete the game)
 
 **STAY Button**:
 - Proceeds to the interaction phase
-- You'll click on 3 of the 4 cards to interact with them
+- You'll click on 3 of the room's cards to interact with them (or all cards if it's a final room with fewer than 4)
 
-### Step 3: Interact with 3 Cards (Only if Staying)
+### Step 3: Interact with Cards (Only if Staying)
 
-You must select 3 of the 4 cards. Each selection:
+**Normal Room (4 cards)**: You must select 3 of the 4 cards.
+**Final Room (fewer than 4 cards)**: You must interact with all remaining cards.
+
+Each card selection:
 
 1. **Click a card** to select it
 2. **Effect applies immediately**:
@@ -123,9 +127,9 @@ You must select 3 of the 4 cards. Each selection:
    - **Weapon**: Equips instantly (message shows old and new weapon)
    - **Potion**: Heals instantly (or shows "already used potion this room")
 3. **Card is marked as processed** (grayed out, can't select again)
-4. **Repeat** until 3 cards are done
+4. **Repeat** until all required cards are done
 
-The **4th unselected card is auto-discarded** (no interaction, just removed from play).
+The **unselected cards are auto-discarded** (no interaction, just removed from play). In a normal 4-card room, 1 card is auto-discarded. In final rooms, all selected cards are processed.
 
 ### Step 4: Room Complete
 A message shows:

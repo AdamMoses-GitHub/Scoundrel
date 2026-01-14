@@ -261,7 +261,12 @@ function displayRoomDecision() {
 
     // Add warning message if can't flee
     if (!status.canRun) {
-        html += '<div class="flee-warning">⚠️ You fled last room - you must face this room!</div>';
+        const gameInstance = getGame();
+        const isFinalRoom = gameInstance.currentRoom && gameInstance.currentRoom.isFinalRoom;
+        const reason = isFinalRoom 
+            ? '⚠️ Final room - you must use all remaining cards!'
+            : '⚠️ You fled last room - you must face this room!';
+        html += `<div class="flee-warning">${reason}</div>`;
     }
 
     html += `

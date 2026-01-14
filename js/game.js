@@ -433,10 +433,12 @@ class Player {
  */
 class Room {
     constructor(cards) {
-        if (cards.length !== GAME_CONSTANTS.CARDS_PER_ROOM) {
-            throw new Error(`Room must have exactly ${GAME_CONSTANTS.CARDS_PER_ROOM} cards`);
+        // Allow 1-4 cards: normal rooms have 4, final rooms may have fewer
+        if (cards.length < 1 || cards.length > GAME_CONSTANTS.CARDS_PER_ROOM) {
+            throw new Error(`Room must have 1-${GAME_CONSTANTS.CARDS_PER_ROOM} cards, got ${cards.length}`);
         }
         this.cards = cards; // Cards drawn this room
+        this.isFinalRoom = cards.length < GAME_CONSTANTS.CARDS_PER_ROOM; // True if fewer than 4 cards (last room)
         this.processedIndices = []; // Indices of cards already interacted with
         this.decidedToStay = false; // Whether player chose to stay
         this.selectedMonsterIndex = null; // Tracks which monster is being fought (for combat choice)
@@ -559,44 +561,49 @@ class Game {
             carryOverIndex = this.currentRoom.cards.findIndex((_, i) => !this.currentRoom.processedIndices.includes(i));
             if (carryOverIndex !== -1) {
                 carryOverCard = this.currentRoom.cards[carryOverIndex];
-                // Draw 3 new cards
+                // Try to draw 3 new cards (may get fewer if deck is nearly depleted)
                 const newCards = this.deck.draw(3);
-                // Build new room with carried card in same position
+                const cardsDrawnCount = newCards.length;
+                
+                // Build new room with carried card in same position, filled with new cards
                 roomCards = [];
                 let newCardIndex = 0;
                 for (let i = 0; i < 4; i++) {
                     if (i === carryOverIndex) {
                         roomCards[i] = carryOverCard;
-                    } else {
+                    } else if (newCardIndex < newCards.length) {
                         roomCards[i] = newCards[newCardIndex++];
                     }
+                    // If we run out of new cards, don't add anything (room will have fewer than 4)
                 }
+                // Remove undefined entries so room only contains actual cards
+                roomCards = roomCards.filter(card => card !== undefined);
                 
                 this.logger.logAction('room-draw', {
                     roomNumber: this.player.roomNumber,
-                    cardsDrawn: 3,
+                    cardsDrawn: cardsDrawnCount,
                     cardsCarriedOver: 1,
                     newCards: newCards.map(c => c.toString()).join(', '),
                     carriedCard: carryOverCard.toString()
                 });
             } else {
-                // No unprocessed card to carry over, draw 4 new cards
+                // No unprocessed card to carry over, draw as many as available (up to 4)
                 roomCards = this.deck.draw(4);
                 
                 this.logger.logAction('room-draw', {
                     roomNumber: this.player.roomNumber,
-                    cardsDrawn: 4,
+                    cardsDrawn: roomCards.length,
                     cardsCarriedOver: 0,
                     newCards: roomCards.map(c => c.toString()).join(', ')
                 });
             }
         } else {
-            // Draw 4 new cards if this is the first room or if we just fled
+            // Draw as many cards as available (up to 4) if this is the first room or if we just fled
             roomCards = this.deck.draw(4);
             
             this.logger.logAction('room-draw', {
                 roomNumber: this.player.roomNumber,
-                cardsDrawn: 4,
+                cardsDrawn: roomCards.length,
                 cardsCarriedOver: 0,
                 newCards: roomCards.map(c => c.toString()).join(', '),
                 context: this.ranLastRoom ? 'after-flee' : 'first-room'
@@ -643,6 +650,16 @@ class Game {
             return false;
         }
 
+        // Cannot flee a final room (fewer than 4 cards)
+        if (this.currentRoom.isFinalRoom) {
+            this.message = '⚠️ Cannot flee the final room! You must face all remaining cards.';
+            this.logger.logAction('flee-rejected', {
+                reason: 'final-room',
+                roomNumber: this.player.roomNumber
+            });
+            return false;
+        }
+
         // Shuffle the cards and put to bottom of deck
         const fleedCards = [...this.currentRoom.cards];
         const cardList = fleedCards.map(c => c.toString()).join(', ');
@@ -650,7 +667,8 @@ class Game {
         this.deck.pushToBottom(fleedCards);
         this.ranLastRoom = true;
 
-        this.message = '💨 You fled the room! The 4 cards shuffle to the bottom of the deck.';
+        const cardCount = fleedCards.length;
+        this.message = `💨 You fled the room! The ${cardCount} cards shuffle to the bottom of the deck.`;
         
         this.logger.logAction('flee', {
             roomNumber: this.player.roomNumber,
@@ -761,11 +779,17 @@ class Game {
         // Mark card as processed
         this.currentRoom.processedIndices.push(cardIndex);
         const processed = this.currentRoom.processedIndices.length;
-        const remaining = GAME_CONSTANTS.CARDS_TO_INTERACT - processed;
+        
+        // Determine how many cards need to be processed for this room
+        // Normal room: 3 cards. Final room: all cards in the room
+        const cardsToProcess = this.currentRoom.isFinalRoom 
+            ? this.currentRoom.cards.length 
+            : GAME_CONSTANTS.CARDS_TO_INTERACT;
+        const remaining = cardsToProcess - processed;
 
         // Check if all interaction cards have been processed
         if (remaining === 0) {
-            // All 3 cards processed - mark room as complete
+            // All required cards processed - mark room as complete
             // Remaining card(s) will be discarded when entering next room
             this.message += `\n\nRoom complete!`;
             this.message += `\nStatus: ${this.player.hp}/${this.player.maxHp} HP | Deck: ${this.deck.remaining()} cards`;
@@ -783,7 +807,7 @@ class Game {
                 discardCount: this.discardPile.length
             });
         } else {
-            this.message += `\n(${processed} cards processed, ${remaining} remaining)`;
+            this.message += `\n(${processed}/${cardsToProcess} cards processed, ${remaining} remaining)`;
             this.gameState = 'card-interaction';
         }
 
@@ -842,17 +866,23 @@ class Game {
         // Mark card as processed
         this.currentRoom.processedIndices.push(monsterIndex);
         const processed = this.currentRoom.processedIndices.length;
-        const remaining = GAME_CONSTANTS.CARDS_TO_INTERACT - processed;
+        
+        // Determine how many cards need to be processed for this room
+        // Normal room: 3 cards. Final room: all cards in the room
+        const cardsToProcess = this.currentRoom.isFinalRoom 
+            ? this.currentRoom.cards.length 
+            : GAME_CONSTANTS.CARDS_TO_INTERACT;
+        const remaining = cardsToProcess - processed;
 
         // Always show processed count
-        this.message += `\n(${processed} cards processed, ${remaining} remaining)`;
+        this.message += `\n(${processed}/${cardsToProcess} cards processed, ${remaining} remaining)`;
         
         // Stay in card-interaction to show the progress
         this.gameState = 'card-interaction';
         
         // If all interaction cards have been processed, prepare room complete info
         if (remaining === 0) {
-            // All 3 cards processed - mark room as complete
+            // All required cards processed - mark room as complete
             // Remaining card(s) will be discarded when entering next room
             this.currentRoom.roomComplete = true;
             this.ranLastRoom = false;
@@ -943,6 +973,9 @@ class Game {
         // Accounting: Deck + Discard + Room cards + Equipped weapon = 44 total
         const discardCount = this.discardPile.length;
         
+        // Can't flee if: already fled last room OR if this is a final room with fewer than 4 cards
+        const canRun = !this.ranLastRoom && (!this.currentRoom || !this.currentRoom.isFinalRoom);
+        
         return {
             hp: this.player.hp,
             maxHp: this.player.maxHp,
@@ -952,7 +985,7 @@ class Game {
             weaponDefeatedMonsters: this.player.weaponDefeatedMonsters,
             deckRemaining: this.deck.remaining(),
             discardCount: discardCount,
-            canRun: !this.ranLastRoom
+            canRun: canRun
         };
     }
 
