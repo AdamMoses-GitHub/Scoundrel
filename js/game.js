@@ -51,6 +51,221 @@ const RankNames = {
 };
 
 /**
+ * GameLogger class - comprehensive logging system for all game events and card movements
+ * Logs to console (debug), game log array (display), and tracks event history
+ */
+class GameLogger {
+    constructor() {
+        this.logs = [];           // All log entries with timestamps
+        this.actionCounter = 0;   // Sequential action numbering
+    }
+
+    /**
+     * Log a card movement (deck→room, room→discard, weapon→equipped, etc.)
+     * @param {Card} card - The card being moved
+     * @param {String} from - Source location (deck, room-[0-3], equipped, discard)
+     * @param {String} to - Destination location
+     * @param {String} reason - Why the card moved (selected, discarded, auto-discard, etc.)
+     * @param {Object} context - Additional context (damage, hp change, etc.)
+     */
+    logCardMovement(card, from, to, reason, context = {}) {
+        this.actionCounter++;
+        const entry = {
+            action: this.actionCounter,
+            type: 'card-movement',
+            timestamp: new Date().toLocaleTimeString(),
+            card: card.getName(),
+            cardSymbol: card.toString(),
+            from,
+            to,
+            reason,
+            context
+        };
+        this.logs.push(entry);
+        
+        // Console logging (verbose)
+        console.log(`[${entry.action}] ${card.toString()} ${from} → ${to} (${reason})`);
+        if (Object.keys(context).length > 0) {
+            console.log(`      Context:`, context);
+        }
+    }
+
+    /**
+     * Log a weapon state change (degradation, reset, etc.)
+     * @param {Card} weapon - The weapon card
+     * @param {String} changeType - Type of change (degraded, reset, locked, etc.)
+     * @param {Object} details - Degradation details (maxValue, monsterValue, etc.)
+     */
+    logWeaponChange(weapon, changeType, details = {}) {
+        this.actionCounter++;
+        const entry = {
+            action: this.actionCounter,
+            type: 'weapon-change',
+            timestamp: new Date().toLocaleTimeString(),
+            weapon: weapon.getName(),
+            weaponSymbol: weapon.toString(),
+            changeType,
+            details
+        };
+        this.logs.push(entry);
+
+        const weaponMax = details.newMax !== undefined ? details.newMax : details.maxValue;
+        const monsterVal = details.monsterValue;
+        const detail = changeType === 'degraded' 
+            ? `locked to max value ${weaponMax} (fought ${RankNames[monsterVal]} = ${monsterVal})`
+            : `reset to new weapon (no degradation history)`;
+        
+        console.log(`[${entry.action}] ⚔️  ${weapon.toString()} ${changeType}: ${detail}`);
+    }
+
+    /**
+     * Log a game state transition
+     * @param {String} fromState - Previous game state
+     * @param {String} toState - New game state
+     * @param {String} trigger - What caused the transition (button click, automatic, etc.)
+     */
+    logStateTransition(fromState, toState, trigger = '') {
+        this.actionCounter++;
+        const entry = {
+            action: this.actionCounter,
+            type: 'state-transition',
+            timestamp: new Date().toLocaleTimeString(),
+            from: fromState,
+            to: toState,
+            trigger
+        };
+        this.logs.push(entry);
+
+        console.log(`[${entry.action}] 🔄 State: ${fromState} → ${toState}${trigger ? ` (${trigger})` : ''}`);
+    }
+
+    /**
+     * Log a game action (flee, stay, combat choice, etc.)
+     * @param {String} action - Action type (flee, stay, fight, use-weapon, use-potion, etc.)
+     * @param {Object} details - Action details
+     */
+    logAction(action, details = {}) {
+        this.actionCounter++;
+        const entry = {
+            action: this.actionCounter,
+            type: 'action',
+            timestamp: new Date().toLocaleTimeString(),
+            actionType: action,
+            details
+        };
+        this.logs.push(entry);
+
+        const emoji = {
+            'flee': '💨',
+            'stay': '🏃',
+            'fight-barehanded': '👊',
+            'fight-weapon': '⚔️',
+            'use-potion': '🧪',
+            'equip-weapon': '🔫',
+            'combat-resolved': '✓',
+            'room-complete': '✨',
+            'victory': '🏆',
+            'defeat': '💀'
+        }[action] || '•';
+
+        const detailStr = Object.entries(details)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(', ');
+        
+        console.log(`[${entry.action}] ${emoji} ${action}${detailStr ? ` (${detailStr})` : ''}`);
+    }
+
+    /**
+     * Log combat resolution (damage calculation, weapon usage, etc.)
+     * @param {Card} monster - Monster card
+     * @param {String} method - How fight was resolved (barehanded, weapon)
+     * @param {Object} stats - Combat stats (monsterValue, weaponValue, damage, hp)
+     */
+    logCombat(monster, method, stats = {}) {
+        this.actionCounter++;
+        const entry = {
+            action: this.actionCounter,
+            type: 'combat',
+            timestamp: new Date().toLocaleTimeString(),
+            monster: monster.getName(),
+            monsterSymbol: monster.toString(),
+            method,
+            stats
+        };
+        this.logs.push(entry);
+
+        const weaponStr = method === 'weapon' 
+            ? ` vs ${stats.weaponName} (${stats.weaponValue})` 
+            : ' (barehanded)';
+        
+        console.log(`[${entry.action}] ⚔️  Combat: ${monster.toString()}${weaponStr} → ${stats.damage} damage`);
+    }
+
+    /**
+     * Log player status update (HP change, room advancement, etc.)
+     * @param {String} eventType - Type of status event (hp-change, room-advance, victory, defeat)
+     * @param {Object} stats - Current player stats
+     */
+    logStatusUpdate(eventType, stats = {}) {
+        this.actionCounter++;
+        const entry = {
+            action: this.actionCounter,
+            type: 'status-update',
+            timestamp: new Date().toLocaleTimeString(),
+            eventType,
+            stats
+        };
+        this.logs.push(entry);
+
+        const emoji = {
+            'hp-change': '❤️',
+            'room-advance': '📍',
+            'victory': '🏆',
+            'defeat': '💀'
+        }[eventType] || '•';
+
+        console.log(`[${entry.action}] ${emoji} ${eventType}: Room ${stats.roomNumber}, HP ${stats.hp}/${stats.maxHp}`);
+    }
+
+    /**
+     * Get all logs as structured data
+     */
+    getAllLogs() {
+        return [...this.logs];
+    }
+
+    /**
+     * Get logs filtered by type
+     */
+    getLogsByType(type) {
+        return this.logs.filter(log => log.type === type);
+    }
+
+    /**
+     * Get recent logs (last N entries)
+     */
+    getRecentLogs(count = 10) {
+        return this.logs.slice(-count);
+    }
+
+    /**
+     * Clear all logs (called on new game)
+     */
+    clear() {
+        this.logs = [];
+        this.actionCounter = 0;
+        console.log('🗑️  Game logs cleared');
+    }
+
+    /**
+     * Export logs as JSON for debugging
+     */
+    exportAsJSON() {
+        return JSON.stringify(this.logs, null, 2);
+    }
+}
+
+/**
  * Card class - represents a single playing card
  */
 class Card {
@@ -235,6 +450,7 @@ class Room {
  */
 class Game {
     constructor() {
+        this.logger = new GameLogger(); // Initialize logging system
         this.deck = null;
         this.player = null;
         this.currentRoom = null;
@@ -247,6 +463,9 @@ class Game {
     }
 
     start() {
+        this.logger.clear(); // Clear logs from previous game
+        this.logger.logAction('game-start', { timestamp: new Date().toLocaleTimeString() });
+        
         this.deck = new Deck();
         this.player = new Player();
         this.gameOver = false;
@@ -254,12 +473,24 @@ class Game {
         this.message = `Welcome to Scoundrel! Survive all ${GAME_CONSTANTS.DECK_SIZE} cards with HP > 0.`;
         this.ranLastRoom = false;
         this.discardPile = [];
+        
+        this.logger.logStatusUpdate('game-start', {
+            roomNumber: 0,
+            hp: this.player.hp,
+            maxHp: this.player.maxHp,
+            deckSize: this.deck.cards.length
+        });
+        
         this.enterNextRoom();
     }
 
     discardCard(card) {
         // Add card to discard pile (most recent at front)
         this.discardPile.unshift(card);
+        this.logger.logCardMovement(card, 'play', 'discard-pile', 'processed', {
+            deckRemaining: this.deck.cards.length,
+            discardCount: this.discardPile.length
+        });
     }
 
     enterNextRoom() {
@@ -267,6 +498,8 @@ class Game {
 
         // Before moving to next room, discard remaining cards from previous room
         if (this.currentRoom && this.currentRoom.roomComplete) {
+            this.logger.logAction('room-exit', { roomNumber: this.player.roomNumber });
+            
             // Room was completed - discard remaining cards that weren't processed or carried over
             // First determine which card will be carried over (if not fleeing)
             const carryOverIndex = !this.ranLastRoom ? this.currentRoom.cards.findIndex((_, i) => !this.currentRoom.processedIndices.includes(i)) : -1;
@@ -274,6 +507,9 @@ class Game {
             this.currentRoom.cards.forEach((card, index) => {
                 // Skip the carried-over card (unprocessed card from a successful room completion)
                 if (index === carryOverIndex) {
+                    this.logger.logCardMovement(card, `room-${this.player.roomNumber}[${index}]`, `room-${this.player.roomNumber + 1}[${index}]`, 'carried-over', {
+                        reason: 'unprocessed card carried to next room'
+                    });
                     return;
                 }
                 // Skip already processed cards (monsters and potions were discarded when processed)
@@ -284,7 +520,11 @@ class Game {
                 if (card.isWeapon() && card === this.player.equippedWeapon) {
                     return;
                 }
-                // Discard any remaining cards
+                // Discard remaining cards (typically only the 4th card after flee)
+                this.logger.logCardMovement(card, `room-${this.player.roomNumber}[${index}]`, 'discard-pile', 'auto-discard', {
+                    reason: 'room exited, card not selected or carried',
+                    deckRemaining: this.deck.cards.length
+                });
                 this.discardCard(card);
             });
         }
@@ -297,6 +537,13 @@ class Game {
             this.won = true;
             this.message = `🏆 VICTORY! You survived all rooms with ${this.player.hp} HP remaining!`;
             this.gameState = 'game-over';
+            
+            this.logger.logStatusUpdate('victory', {
+                roomNumber: this.player.roomNumber,
+                hp: this.player.hp,
+                maxHp: this.player.maxHp,
+                deckSize: 0
+            });
             return;
         }
 
@@ -324,22 +571,55 @@ class Game {
                         roomCards[i] = newCards[newCardIndex++];
                     }
                 }
+                
+                this.logger.logAction('room-draw', {
+                    roomNumber: this.player.roomNumber,
+                    cardsDrawn: 3,
+                    cardsCarriedOver: 1,
+                    newCards: newCards.map(c => c.toString()).join(', '),
+                    carriedCard: carryOverCard.toString()
+                });
             } else {
                 // No unprocessed card to carry over, draw 4 new cards
                 roomCards = this.deck.draw(4);
+                
+                this.logger.logAction('room-draw', {
+                    roomNumber: this.player.roomNumber,
+                    cardsDrawn: 4,
+                    cardsCarriedOver: 0,
+                    newCards: roomCards.map(c => c.toString()).join(', ')
+                });
             }
         } else {
             // Draw 4 new cards if this is the first room or if we just fled
             roomCards = this.deck.draw(4);
+            
+            this.logger.logAction('room-draw', {
+                roomNumber: this.player.roomNumber,
+                cardsDrawn: 4,
+                cardsCarriedOver: 0,
+                newCards: roomCards.map(c => c.toString()).join(', '),
+                context: this.ranLastRoom ? 'after-flee' : 'first-room'
+            });
         }
         
         this.currentRoom = new Room(roomCards);
+        
+        // Log room entry
+        this.logger.logStatusUpdate('room-advance', {
+            roomNumber: this.player.roomNumber,
+            hp: this.player.hp,
+            maxHp: this.player.maxHp,
+            deckSize: this.deck.cards.length,
+            discardSize: this.discardPile.length
+        });
         
         // If player fled last room, they must stay this room (auto-stay, no chooser shown)
         if (this.ranLastRoom) {
             this.currentRoom.decidedToStay = true;
             this.gameState = 'card-interaction';
             this.message = `Room ${this.player.roomNumber}: You drew 4 cards.\n⚠️ You fled last room - you cannot flee again!`;
+            this.logger.logStateTransition('room-exit', 'card-interaction', 'forced-stay-after-flee');
         } else {
             this.gameState = 'room-decision';
             const carryMessage = carryOverCard ? `\n♻️ Carried over: ${carryOverCard.getName()}` : '';
@@ -356,16 +636,29 @@ class Game {
         
         if (this.ranLastRoom) {
             this.message = '⚠️ Cannot flee twice in a row! You must face this room.';
+            this.logger.logAction('flee-rejected', {
+                reason: 'fled-last-room',
+                roomNumber: this.player.roomNumber
+            });
             return false;
         }
 
         // Shuffle the cards and put to bottom of deck
         const fleedCards = [...this.currentRoom.cards];
+        const cardList = fleedCards.map(c => c.toString()).join(', ');
         shuffleArray(fleedCards);
         this.deck.pushToBottom(fleedCards);
         this.ranLastRoom = true;
 
         this.message = '💨 You fled the room! The 4 cards shuffle to the bottom of the deck.';
+        
+        this.logger.logAction('flee', {
+            roomNumber: this.player.roomNumber,
+            cardsShuffledToBottom: cardList,
+            newDeckSize: this.deck.cards.length,
+            hp: this.player.hp
+        });
+        
         this.enterNextRoom();
         return true;
     }
@@ -396,6 +689,14 @@ class Game {
             this.currentRoom.selectedMonsterIndex = cardIndex;
             this.gameState = 'combat-choice';
             this.message = `You selected ${card.getName()}. Choose how to fight:`;
+            
+            this.logger.logAction('select-card', {
+                cardIndex,
+                card: card.toString(),
+                cardType: 'monster',
+                roomNumber: this.player.roomNumber
+            });
+            
             return true;
         }
 
@@ -409,8 +710,19 @@ class Game {
             this.player.equipWeapon(card);
             const oldWeaponName = oldWeapon ? oldWeapon.getName() : 'nothing';
             this.message += `🔫 Equipped ${card.getName()} (was ${oldWeaponName})`;
+            
+            this.logger.logAction('equip-weapon', {
+                newWeapon: card.toString(),
+                oldWeapon: oldWeapon ? oldWeapon.toString() : null,
+                cardIndex,
+                roomNumber: this.player.roomNumber
+            });
+            
             // If there was an old weapon, discard it immediately
             if (oldWeapon) {
+                this.logger.logCardMovement(oldWeapon, 'equipped-slot', 'discard-pile', 'replaced', {
+                    newWeapon: card.toString()
+                });
                 this.discardCard(oldWeapon);
             }
             // New weapon goes to equipped slot, not discarded
@@ -420,10 +732,29 @@ class Game {
                 this.player.heal(healing);
                 this.player.usedPotionThisRoom = true;
                 this.message += `🧪 Drank potion: +${healing} HP → ${this.player.hp}/${this.player.maxHp}`;
+                
+                this.logger.logAction('use-potion', {
+                    potion: card.toString(),
+                    healAmount: healing,
+                    hpBefore: this.player.hp - healing,
+                    hpAfter: this.player.hp,
+                    cardIndex,
+                    roomNumber: this.player.roomNumber
+                });
             } else {
                 this.message += `⚠️ Already used a potion this room, ${card.getName()} has no effect`;
+                
+                this.logger.logAction('use-potion-rejected', {
+                    potion: card.toString(),
+                    reason: 'already-used-potion',
+                    cardIndex,
+                    roomNumber: this.player.roomNumber
+                });
             }
             // Potions are immediately discarded
+            this.logger.logCardMovement(card, `room-${this.player.roomNumber}[${cardIndex}]`, 'discard-pile', 'potion-consumed', {
+                healingProvided: card.getValue()
+            });
             this.discardCard(card);
         }
 
@@ -443,6 +774,14 @@ class Game {
             this.currentRoom.roomComplete = true;
             // Reset the "fled last room" flag since we completed this room normally
             this.ranLastRoom = false;
+            
+            this.logger.logAction('room-complete', {
+                roomNumber: this.player.roomNumber,
+                hp: this.player.hp,
+                maxHp: this.player.maxHp,
+                deckRemaining: this.deck.remaining(),
+                discardCount: this.discardPile.length
+            });
         } else {
             this.message += `\n(${processed} cards processed, ${remaining} remaining)`;
             this.gameState = 'card-interaction';
@@ -482,10 +821,22 @@ class Game {
             this.won = false;
             this.message += `\n\n💀 You were defeated!`;
             this.gameState = 'game-over';
+            
+            this.logger.logStatusUpdate('defeat', {
+                roomNumber: this.player.roomNumber,
+                hp: this.player.hp,
+                maxHp: this.player.maxHp,
+                killedBy: card.toString()
+            });
+            
             return true;
         }
 
         // Monster is immediately discarded after combat
+        this.logger.logCardMovement(card, `room-${this.player.roomNumber}[${monsterIndex}]`, 'discard-pile', 'defeated-in-combat', {
+            hpAfter: this.player.hp,
+            weaponUsed: useWeapon && this.player.equippedWeapon ? this.player.equippedWeapon.toString() : 'barehanded'
+        });
         this.discardCard(card);
 
         // Mark card as processed
@@ -505,6 +856,14 @@ class Game {
             // Remaining card(s) will be discarded when entering next room
             this.currentRoom.roomComplete = true;
             this.ranLastRoom = false;
+            
+            this.logger.logAction('room-complete', {
+                roomNumber: this.player.roomNumber,
+                hp: this.player.hp,
+                maxHp: this.player.maxHp,
+                deckRemaining: this.deck.remaining(),
+                discardCount: this.discardPile.length
+            });
         }
 
         return true;
@@ -520,20 +879,62 @@ class Game {
         if (!actuallyUseWeapon) {
             // Fight barehanded
             const damage = monsterValue;
+            const hpBefore = this.player.hp;
             this.player.takeDamage(damage);
             this.message += `⚔️ ${card.getName()} (${monsterValue}) barehanded → ${damage} dmg (${this.player.hp}/${this.player.maxHp})`;
+            
+            this.logger.logCombat(card, 'barehanded', {
+                monsterValue,
+                weaponValue: 0,
+                damage,
+                hpBefore,
+                hpAfter: this.player.hp
+            });
         } else if (this.player.equippedWeapon) {
             // Fight with weapon
             const weaponValue = this.player.getWeaponValue();
             const damage = Math.max(0, monsterValue - weaponValue);
+            const hpBefore = this.player.hp;
+            const degradeBefore = this.player.weaponMaxMonsterValue;
+            
             this.player.takeDamage(damage);
             this.player.updateWeaponMaxMonsterValue(card);
+            
+            const degradeAfter = this.player.weaponMaxMonsterValue;
+            const weaponDegraded = degradeBefore !== null && degradeAfter < degradeBefore;
+            
             this.message += `⚔️ ${card.getName()} (${monsterValue}) vs ${this.player.equippedWeapon.getName()} (${weaponValue}) → ${damage} dmg (${this.player.hp}/${this.player.maxHp})`;
+            
+            this.logger.logCombat(card, 'weapon', {
+                monsterValue,
+                weaponName: this.player.equippedWeapon.toString(),
+                weaponValue,
+                damage,
+                hpBefore,
+                hpAfter: this.player.hp
+            });
+            
+            if (weaponDegraded) {
+                this.logger.logWeaponChange(this.player.equippedWeapon, 'degraded', {
+                    newMax: degradeAfter,
+                    monsterValue,
+                    previousMax: degradeBefore
+                });
+            }
         } else {
             // No weapon - fight barehanded
             const damage = monsterValue;
+            const hpBefore = this.player.hp;
             this.player.takeDamage(damage);
             this.message += `⚔️ ${card.getName()} (${monsterValue}) barehanded → ${damage} dmg (${this.player.hp}/${this.player.maxHp})`;
+            
+            this.logger.logCombat(card, 'barehanded', {
+                monsterValue,
+                weaponValue: 0,
+                damage,
+                hpBefore,
+                hpAfter: this.player.hp
+            });
         }
     }
 
@@ -595,7 +996,12 @@ function getGame() {
 }
 
 function newGame() {
-    gameInstance = new Game();
-    gameInstance.start();
-    return gameInstance;
+    try {
+        gameInstance = new Game();
+        gameInstance.start();
+        return gameInstance;
+    } catch (error) {
+        console.error('Error initializing game:', error);
+        throw error;
+    }
 }

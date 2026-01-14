@@ -76,6 +76,7 @@ const weaponDisplay = document.getElementById('weaponDisplay');
 // Game log tracking
 let gameLog = [];
 let discardPileOrder = 'newest'; // 'newest' (most recent first) or 'oldest' (oldest first)
+let logReverseOrder = true; // true = newest first, false = oldest first
 
 // Game phase content areas
 const roomDecisionContent = document.getElementById('roomDecisionContent');
@@ -138,41 +139,45 @@ function updateInteractionCountLine() {
  * Main game display update
  */
 function updateGameDisplay() {
-    const game = getGame();
+    try {
+        const game = getGame();
 
-    // Update stats bar
-    updateStatsBar();
-    
-    // Update interaction count line
-    updateInteractionCountLine();
+        // Update stats bar
+        updateStatsBar();
+        
+        // Update interaction count line
+        updateInteractionCountLine();
 
-    // Track message in log (only log once, then clear)
-    if (game.message) {
-        gameLog.push(game.message);
-        game.message = ''; // Clear message after logging to prevent duplicates
-    }
+        // Track message in log (only log once, then clear)
+        if (game.message) {
+            gameLog.push(game.message);
+            game.message = ''; // Clear message after logging to prevent duplicates
+        }
 
-    // Update weapon and monster display
-    updateWeaponDisplay();
-    if (game.gameState === 'combat-choice') {
-        updateMonsterDisplay();
-    }
+        // Update weapon and monster display
+        updateWeaponDisplay();
+        if (game.gameState === 'combat-choice') {
+            updateMonsterDisplay();
+        }
 
-    // Show appropriate game phase
-    switch (game.gameState) {
-        case 'room-decision':
-            displayRoomDecision();
-            break;
-        case 'card-interaction':
-        case 'combat-choice':
-            displayCardInteraction();
-            break;
-        case 'room-complete':
-            displayRoomComplete();
-            break;
-        case 'game-over':
-            displayGameOver();
-            break;
+        // Show appropriate game phase
+        switch (game.gameState) {
+            case 'room-decision':
+                displayRoomDecision();
+                break;
+            case 'card-interaction':
+            case 'combat-choice':
+                displayCardInteraction();
+                break;
+            case 'room-complete':
+                displayRoomComplete();
+                break;
+            case 'game-over':
+                displayGameOver();
+                break;
+        }
+    } catch (error) {
+        console.error('Error updating game display:', error);
     }
 }
 
@@ -484,10 +489,15 @@ function nextRoom() {
 }
 
 function startNewGame() {
-    gameLog = []; // Reset log for new game
-    newGame();
-    updateGameDisplay();
-    showGameScreen();
+    try {
+        gameLog = []; // Reset log for new game
+        newGame();
+        updateGameDisplay();
+        showGameScreen();
+    } catch (error) {
+        console.error('Error starting new game:', error);
+        alert('Error starting game. Check console for details.');
+    }
 }
 
 /**
@@ -543,16 +553,147 @@ function toggleMenuDropdown() {
     dropdown.classList.toggle('show');
 }
 
+function updateLogDisplay() {
+    const logContent = document.getElementById('logContent');
+    const game = getGame();
+    
+    if (!game || !game.logger) {
+        logContent.innerHTML = '<div class="log-entry">No game in progress.</div>';
+        return;
+    }
+    
+    const allLogs = game.logger.getAllLogs();
+    
+    if (allLogs.length === 0) {
+        logContent.innerHTML = '<div class="log-entry">No events yet.</div>';
+    } else {
+        // Apply ordering based on logReverseOrder flag
+        const logsToDisplay = logReverseOrder ? [...allLogs].reverse() : allLogs;
+        
+        // Display detailed logs with friendly display names
+        const logHTML = logsToDisplay.map((entry) => {
+                let html = `<div class="log-entry detailed-log">`;
+                html += `<div class="log-action-num">[${entry.action}]</div>`;
+                let displayText = '';
+                let displayClass = 'log-action';
+                
+                switch(entry.type) {
+                    case 'card-movement':
+                        displayClass = 'log-card-movement';
+                        displayText = `${entry.cardSymbol} <strong>${entry.card}</strong><br>`;
+                        displayText += `<span class="log-reason">${entry.from} → ${entry.to}</span>`;
+                        displayText += `<br><span style="color: var(--text-secondary); font-size: 0.85em;">${entry.reason}</span>`;
+                        break;
+                        
+                    case 'weapon-change':
+                        displayClass = 'log-weapon';
+                        displayText = `${entry.weaponSymbol} <strong>${entry.weapon}</strong><br>`;
+                        displayText += `<span style="color: var(--accent-gold);">${entry.changeType}</span>`;
+                        if (entry.details.newMax) {
+                            displayText += ` (locked to max value ${entry.details.newMax})`;
+                        }
+                        break;
+                        
+                    case 'state-transition':
+                        displayClass = 'log-state';
+                        displayText = `State: <code>${entry.from}</code> → <code>${entry.to}</code>`;
+                        if (entry.trigger) {
+                            displayText += `<br><span style="color: var(--text-secondary); font-size: 0.85em;">${entry.trigger}</span>`;
+                        }
+                        break;
+                        
+                    case 'action':
+                        displayClass = 'log-action';
+                        const actionEmoji = {
+                            'game-start': '🎮',
+                            'game-end': '🏁',
+                            'room-draw': '🎴',
+                            'room-exit': '🚪',
+                            'room-complete': '✨',
+                            'select-card': '👆',
+                            'equip-weapon': '🔫',
+                            'use-potion': '🧪',
+                            'use-potion-rejected': '❌',
+                            'flee': '💨',
+                            'flee-rejected': '🛑',
+                            'room-advance': '📍'
+                        }[entry.actionType] || '•';
+                        
+                        displayText = `${actionEmoji} <strong>${formatActionName(entry.actionType)}</strong>`;
+                        
+                        // Add readable detail for some actions
+                        if (entry.actionType === 'equip-weapon' && entry.details.newWeapon) {
+                            displayText += `<br><span style="color: var(--text-secondary); font-size: 0.9em;">Equipped ${entry.details.newWeapon}`;
+                            if (entry.details.oldWeapon) {
+                                displayText += ` (was ${entry.details.oldWeapon})`;
+                            }
+                            displayText += `</span>`;
+                        } else if (entry.actionType === 'use-potion' && entry.details.healAmount) {
+                            displayText += `<br><span style="color: var(--text-secondary); font-size: 0.9em;">+${entry.details.healAmount} HP</span>`;
+                        } else if (entry.actionType === 'room-complete') {
+                            displayText += `<br><span style="color: var(--text-secondary); font-size: 0.9em;">Room ${entry.details.roomNumber}</span>`;
+                        } else if (entry.actionType === 'flee' && entry.details.cardsShuffledToBottom) {
+                            displayText += `<br><span style="color: var(--text-secondary); font-size: 0.9em;">Deck grew to ${entry.details.newDeckSize} cards</span>`;
+                        } else if (entry.actionType === 'room-draw' && entry.details.cardsDrawn) {
+                            displayText += `<br><span style="color: var(--text-secondary); font-size: 0.9em;">Drew ${entry.details.cardsDrawn} cards`;
+                            if (entry.details.cardsCarriedOver > 0) {
+                                displayText += ` (${entry.details.cardsCarriedOver} carried over)`;
+                            }
+                            displayText += `</span>`;
+                        }
+                        break;
+                        
+                    case 'combat':
+                        displayClass = 'log-combat';
+                        displayText = `⚔️ <strong>${entry.monster}</strong> (${entry.stats.monsterValue})`;
+                        if (entry.method === 'weapon') {
+                            displayText += ` vs ${entry.stats.weaponName} (${entry.stats.weaponValue})`;
+                        } else {
+                            displayText += ` - barehanded`;
+                        }
+                        displayText += `<br><span style="color: var(--text-secondary); font-size: 0.9em;">Damage: ${entry.stats.damage} | HP: ${entry.stats.hpAfter}/${entry.stats.hp || 20}</span>`;
+                        break;
+                        
+                    case 'status-update':
+                        displayClass = 'log-status';
+                        const statusEmoji = {
+                            'game-start': '🎮',
+                            'hp-change': '❤️',
+                            'room-advance': '📍',
+                            'victory': '🏆',
+                            'defeat': '💀'
+                        }[entry.eventType] || '•';
+                        
+                        displayText = `${statusEmoji} <strong>${formatStatusName(entry.eventType)}</strong>`;
+                        displayText += `<br><span style="color: var(--text-secondary); font-size: 0.9em;">Room ${entry.stats.roomNumber} | HP ${entry.stats.hp}/${entry.stats.maxHp}`;
+                        if (entry.stats.deckSize !== undefined) {
+                            displayText += ` | Deck: ${entry.stats.deckSize}`;
+                        }
+                        if (entry.stats.discardSize !== undefined) {
+                            displayText += ` | Discard: ${entry.stats.discardSize}`;
+                        }
+                        displayText += `</span>`;
+                        break;
+                        
+                    default:
+                        displayText = JSON.stringify(entry);
+                }
+                
+                html += `<div class="${displayClass}">${displayText}</div>`;
+                html += `<div class="log-timestamp">${entry.timestamp}</div></div>`;
+                return html;
+            }).join('');
+            
+            logContent.innerHTML = logHTML;
+        }
+}
+
 function toggleLogModal() {
     const modal = document.getElementById('logModal');
     modal.classList.toggle('show');
     
     if (modal.classList.contains('show')) {
-        // Populate log content in reverse chronological order (newest first)
-        const logContent = document.getElementById('logContent');
-        logContent.innerHTML = gameLog.length > 0 
-            ? [...gameLog].reverse().map(msg => `<div class="log-entry">${msg}</div>`).join('')
-            : '<div class="log-entry">No events yet.</div>';
+        updateLogDisplay();
     }
     
     // Close dropdown when opening log
@@ -560,6 +701,46 @@ function toggleLogModal() {
     if (dropdown) {
         dropdown.classList.remove('show');
     }
+}
+
+function toggleLogOrder() {
+    logReverseOrder = !logReverseOrder;
+    const button = document.getElementById('logOrderToggle');
+    if (button) {
+        button.textContent = logReverseOrder ? '↓ Newest First' : '↑ Oldest First';
+    }
+    updateLogDisplay();
+}
+
+// Helper function to format action names for display
+function formatActionName(actionType) {
+    const names = {
+        'game-start': 'Game Started',
+        'game-end': 'Game Ended',
+        'room-draw': 'Room Entered',
+        'room-exit': 'Room Exited',
+        'room-complete': 'Room Complete',
+        'select-card': 'Card Selected',
+        'equip-weapon': 'Weapon Equipped',
+        'use-potion': 'Potion Used',
+        'use-potion-rejected': 'Potion Rejected',
+        'flee': 'Room Fled',
+        'flee-rejected': 'Flee Failed',
+        'room-advance': 'Room Advance'
+    };
+    return names[actionType] || actionType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Helper function to format status names for display
+function formatStatusName(eventType) {
+    const names = {
+        'game-start': 'Game Started',
+        'hp-change': 'HP Changed',
+        'room-advance': 'Advanced to Room',
+        'victory': 'Victory!',
+        'defeat': 'Defeated!'
+    };
+    return names[eventType] || eventType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 function toggleDiscardModal() {
