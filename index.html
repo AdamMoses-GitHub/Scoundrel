@@ -94,6 +94,7 @@
             <div id="menuDropdownContent" class="dropdown-content">
                 <a onclick="toggleLogModal()">📋 View Log</a>
                 <a onclick="toggleDiscardModal()">🗑️ View Discard</a>
+                <a onclick="toggleStatsModal()">📊 View Stats</a>
                 <a onclick="exitToMenu()">← Exit to Menu</a>
             </div>
             
@@ -134,6 +135,26 @@
                             <button onclick="toggleDiscardOrder()" style="padding: 8px 16px; font-size: 0.9em;">Reverse Order</button>
                         </div>
                         <div id="discardContent" class="modal-body"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats modal popup -->
+            <div id="statsModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Game Statistics</h2>
+                        <button class="modal-close" onclick="toggleStatsModal()">✕</button>
+                    </div>
+                    <div id="statsContent" class="modal-body">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <div><strong>Games Played:</strong> <span id="gamesPlayed">0</span></div>
+                            <div><strong>Games Won:</strong> <span id="gamesWon">0</span></div>
+                            <div><strong>Win Rate:</strong> <span id="winRate">0%</span></div>
+                            <div><strong>Best Run:</strong> <span id="bestRun">Room 0</span></div>
+                            <div><strong>Total Cards Defeated:</strong> <span id="totalCards">0</span></div>
+                            <div><strong>Highest HP Reached:</strong> <span id="highestHP">20</span></div>
+                        </div>
                     </div>
                 </div>
             </div>

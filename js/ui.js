@@ -47,6 +47,12 @@ function buildWeaponDisplayHtml(game, isCompact = false) {
     const status = game.getPlayerStatus();
     const monstersListHtml = buildDefeatedMonstersHtml(status.weaponDefeatedMonsters, monstersClass);
     
+    // Build degradation warning if weapon is locked to specific monsters
+    let degradationWarning = '';
+    if (game.player.weaponMaxMonsterValue !== null) {
+        degradationWarning = `<div class="weapon-degradation-warning">⚠️ Max usable: ${game.player.weaponMaxMonsterValue}</div>`;
+    }
+    
     return `
         <div class="${containerClass}">
             <div class="weapon-label">Equipped Weapon</div>
@@ -57,6 +63,7 @@ function buildWeaponDisplayHtml(game, isCompact = false) {
                 </div>
                 ${monstersListHtml}
             </div>
+            ${degradationWarning}
         </div>
     `;
 }
@@ -415,6 +422,9 @@ function displayGameOver() {
     const game = getGame();
     const stats = game.getGameOverStats();
 
+    // Save stats to persistent storage
+    saveStatsToStorage(stats);
+
     const resultClass = stats.won ? 'victory' : 'defeat';
     const resultTitle = stats.won ? '🏆 VICTORY!' : '💀 DEFEAT!';
     const resultMessage = stats.won
@@ -719,6 +729,57 @@ function toggleLogOrder() {
         button.textContent = logReverseOrder ? '↓ Newest First' : '↑ Oldest First';
     }
     updateLogDisplay();
+}
+
+function toggleStatsModal() {
+    const modal = document.getElementById('statsModal');
+    modal.classList.toggle('show');
+    
+    if (modal.classList.contains('show')) {
+        updateStatsDisplay();
+    }
+    
+    // Close dropdown when opening stats
+    const dropdown = document.getElementById('menuDropdownContent');
+    if (dropdown) {
+        dropdown.classList.remove('show');
+    }
+}
+
+function updateStatsDisplay() {
+    const stats = loadStatsFromStorage();
+    
+    document.getElementById('gamesPlayed').textContent = stats.played;
+    document.getElementById('gamesWon').textContent = stats.won;
+    document.getElementById('winRate').textContent = 
+        stats.played > 0 ? Math.round((stats.won / stats.played) * 100) + '%' : '0%';
+    document.getElementById('bestRun').textContent = `Room ${stats.bestRoom}`;
+    document.getElementById('totalCards').textContent = stats.totalCards;
+    document.getElementById('highestHP').textContent = stats.highestHP;
+}
+
+function loadStatsFromStorage() {
+    const stored = localStorage.getItem('scoundrelStats');
+    if (stored) {
+        return JSON.parse(stored);
+    }
+    // Return default stats if none exist
+    return { played: 0, won: 0, bestRoom: 0, totalCards: 0, highestHP: 20 };
+}
+
+function saveStatsToStorage(gameStats) {
+    const currentStats = loadStatsFromStorage();
+    
+    // Update stats based on game outcome
+    currentStats.played += 1;
+    if (gameStats.won) {
+        currentStats.won += 1;
+    }
+    currentStats.bestRoom = Math.max(currentStats.bestRoom, gameStats.roomsCompleted);
+    currentStats.totalCards += gameStats.roomsCompleted;  // Each room = cards processed
+    currentStats.highestHP = Math.max(currentStats.highestHP, gameStats.finalHp);
+    
+    localStorage.setItem('scoundrelStats', JSON.stringify(currentStats));
 }
 
 // Helper function to format action names for display
