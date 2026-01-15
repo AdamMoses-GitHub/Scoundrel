@@ -130,7 +130,8 @@ function updateInteractionCountLine() {
     // Show interaction count during card interaction, combat choice, and room complete phases
     if (game.currentRoom && (game.gameState === 'card-interaction' || game.gameState === 'combat-choice' || game.gameState === 'room-complete')) {
         const processed = game.currentRoom.processedIndices.length;
-        const countText = `Interacted with ${processed} of 3 cards`;
+        const cardsToProcess = game.currentRoom.isFinalRoom ? game.currentRoom.cards.length : 3;
+        const countText = `Interacted with ${processed} of ${cardsToProcess} cards`;
         interactionCountLine.innerHTML = `<div class="interaction-count">${countText}</div>`;
     }
 }
@@ -292,11 +293,14 @@ function displayCardInteraction() {
     const cards = game.getRoomCards();
     const processedIndices = game.currentRoom.processedIndices;
 
-    // Active cards (clickable) - only if not processed AND fewer than 3 cards processed
+    // Determine how many cards need to be processed (3 for normal rooms, all for final rooms)
+    const cardsToProcess = game.currentRoom.isFinalRoom ? game.currentRoom.cards.length : 3;
+    
+    // Active cards (clickable) - only if not processed AND fewer than required cards processed
     let cardsHtml = '<div class="cards-display">';
     cards.forEach((card, index) => {
         const isProcessed = processedIndices.includes(index);
-        const isClickable = !isProcessed && processedIndices.length < 3;
+        const isClickable = !isProcessed && processedIndices.length < cardsToProcess;
         
         if (isProcessed) {
             // Show empty placeholder for processed cards

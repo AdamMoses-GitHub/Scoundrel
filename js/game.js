@@ -780,33 +780,19 @@ class Game {
         this.currentRoom.processedIndices.push(cardIndex);
         const processed = this.currentRoom.processedIndices.length;
         
-        // Determine how many cards need to be processed for this room
-        // Normal room: 3 cards. Final room: all cards in the room
-        const cardsToProcess = this.currentRoom.isFinalRoom 
-            ? this.currentRoom.cards.length 
-            : GAME_CONSTANTS.CARDS_TO_INTERACT;
-        const remaining = cardsToProcess - processed;
-
         // Check if all interaction cards have been processed
+        const remaining = this.checkAndCompleteRoom();
+        
         if (remaining === 0) {
             // All required cards processed - mark room as complete
             // Remaining card(s) will be discarded when entering next room
             this.message += `\n\nRoom complete!`;
             this.message += `\nStatus: ${this.player.hp}/${this.player.maxHp} HP | Deck: ${this.deck.remaining()} cards`;
             this.gameState = 'room-complete';
-            // Mark room as complete for discard handling in enterNextRoom
-            this.currentRoom.roomComplete = true;
-            // Reset the "fled last room" flag since we completed this room normally
-            this.ranLastRoom = false;
-            
-            this.logger.logAction('room-complete', {
-                roomNumber: this.player.roomNumber,
-                hp: this.player.hp,
-                maxHp: this.player.maxHp,
-                deckRemaining: this.deck.remaining(),
-                discardCount: this.discardPile.length
-            });
         } else {
+            const cardsToProcess = this.currentRoom.isFinalRoom 
+                ? this.currentRoom.cards.length 
+                : GAME_CONSTANTS.CARDS_TO_INTERACT;
             this.message += `\n(${processed}/${cardsToProcess} cards processed, ${remaining} remaining)`;
             this.gameState = 'card-interaction';
         }
@@ -867,20 +853,21 @@ class Game {
         this.currentRoom.processedIndices.push(monsterIndex);
         const processed = this.currentRoom.processedIndices.length;
         
-        // Determine how many cards need to be processed for this room
-        // Normal room: 3 cards. Final room: all cards in the room
+        // Check if all interaction cards have been processed
+        const remaining = this.checkAndCompleteRoom();
+
+        // Determine cards to process for progress display
         const cardsToProcess = this.currentRoom.isFinalRoom 
             ? this.currentRoom.cards.length 
             : GAME_CONSTANTS.CARDS_TO_INTERACT;
-        const remaining = cardsToProcess - processed;
-
+        
         // Always show processed count
         this.message += `\n(${processed}/${cardsToProcess} cards processed, ${remaining} remaining)`;
         
         // Stay in card-interaction to show the progress
         this.gameState = 'card-interaction';
         
-        // If all interaction cards have been processed, prepare room complete info
+        // If all interaction cards have been processed, update state
         if (remaining === 0) {
             // All required cards processed - mark room as complete
             // Remaining card(s) will be discarded when entering next room
@@ -996,6 +983,40 @@ class Game {
             name: c.getName(),
             toString: c.toString()
         })) : [];
+    }
+
+    /**
+     * Helper method to check if room completion conditions are met
+     * Determines if all required cards have been processed and marks room as complete
+     * Returns the number of remaining cards that need to be processed (0 = complete)
+     */
+    checkAndCompleteRoom() {
+        if (!this.currentRoom) return -1;
+        
+        const processed = this.currentRoom.processedIndices.length;
+        
+        // Determine how many cards need to be processed for this room
+        // Normal room: 3 cards. Final room: all cards in the room
+        const cardsToProcess = this.currentRoom.isFinalRoom 
+            ? this.currentRoom.cards.length 
+            : GAME_CONSTANTS.CARDS_TO_INTERACT;
+        const remaining = cardsToProcess - processed;
+
+        // If all interaction cards have been processed, mark room as complete
+        if (remaining === 0) {
+            this.currentRoom.roomComplete = true;
+            this.ranLastRoom = false;
+            
+            this.logger.logAction('room-complete', {
+                roomNumber: this.player.roomNumber,
+                hp: this.player.hp,
+                maxHp: this.player.maxHp,
+                deckRemaining: this.deck.remaining(),
+                discardCount: this.discardPile.length
+            });
+        }
+        
+        return remaining;
     }
 
     getDiscardPile() {
