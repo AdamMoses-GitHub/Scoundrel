@@ -19,6 +19,19 @@ const GAME_CONSTANTS = {
 };
 
 /**
+ * Game State Constants
+ * All possible game states centralized for consistency
+ */
+const GAME_STATES = {
+    MENU: 'menu',
+    ROOM_DECISION: 'room-decision',
+    CARD_INTERACTION: 'card-interaction',
+    COMBAT_CHOICE: 'combat-choice',
+    ROOM_COMPLETE: 'room-complete',
+    GAME_OVER: 'game-over'
+};
+
+/**
  * Utility function - Fisher-Yates shuffle
  * Shuffles array in-place
  */
@@ -456,7 +469,7 @@ class Game {
         this.deck = null;
         this.player = null;
         this.currentRoom = null;
-        this.gameState = 'menu'; // menu, room-decision, card-interaction, combat-choice, room-complete, game-over
+        this.gameState = GAME_STATES.MENU; // Initial state
         this.gameOver = false;
         this.won = false;
         this.message = '';
@@ -538,7 +551,7 @@ class Game {
             this.gameOver = true;
             this.won = true;
             this.message = `🏆 VICTORY! You survived all rooms with ${this.player.hp} HP remaining!`;
-            this.gameState = 'game-over';
+            this.gameState = GAME_STATES.GAME_OVER;
             
             this.logger.logStatusUpdate('victory', {
                 roomNumber: this.player.roomNumber,
@@ -624,11 +637,11 @@ class Game {
         // If player fled last room, they must stay this room (auto-stay, no chooser shown)
         if (this.ranLastRoom) {
             this.currentRoom.decidedToStay = true;
-            this.gameState = 'card-interaction';
+            this.gameState = GAME_STATES.CARD_INTERACTION;
             this.message = `Room ${this.player.roomNumber}: You drew 4 cards.\n⚠️ You fled last room - you cannot flee again!`;
             this.logger.logStateTransition('room-exit', 'card-interaction', 'forced-stay-after-flee');
         } else {
-            this.gameState = 'room-decision';
+            this.gameState = GAME_STATES.ROOM_DECISION;
             const carryMessage = carryOverCard ? `\n♻️ Carried over: ${carryOverCard.getName()}` : '';
             this.message = `Room ${this.player.roomNumber}: You drew 4 cards.${carryMessage}`;
         }
@@ -705,7 +718,7 @@ class Game {
         // If it's a monster, show combat choice instead of immediately fighting
         if (card.isMonster()) {
             this.currentRoom.selectedMonsterIndex = cardIndex;
-            this.gameState = 'combat-choice';
+            this.gameState = GAME_STATES.COMBAT_CHOICE;
             this.message = `You selected ${card.getName()}. Choose how to fight:`;
             
             this.logger.logAction('select-card', {
@@ -788,14 +801,13 @@ class Game {
             // Remaining card(s) will be discarded when entering next room
             this.message += `\n\nRoom complete!`;
             this.message += `\nStatus: ${this.player.hp}/${this.player.maxHp} HP | Deck: ${this.deck.remaining()} cards`;
-            this.gameState = 'room-complete';
+            this.gameState = GAME_STATES.ROOM_COMPLETE;
         } else {
             const cardsToProcess = this.currentRoom.isFinalRoom 
                 ? this.currentRoom.cards.length 
                 : GAME_CONSTANTS.CARDS_TO_INTERACT;
             this.message += `\n(${processed}/${cardsToProcess} cards processed, ${remaining} remaining)`;
-            this.gameState = 'card-interaction';
-        }
+            this.gameState = GAME_STATES.CARD_INTERACTION;
 
         return true;
     }
@@ -830,7 +842,7 @@ class Game {
             this.gameOver = true;
             this.won = false;
             this.message += `\n\n💀 You were defeated!`;
-            this.gameState = 'game-over';
+            this.gameState = GAME_STATES.GAME_OVER;
             
             this.logger.logStatusUpdate('defeat', {
                 roomNumber: this.player.roomNumber,
@@ -865,7 +877,7 @@ class Game {
         this.message += `\n(${processed}/${cardsToProcess} cards processed, ${remaining} remaining)`;
         
         // Stay in card-interaction to show the progress
-        this.gameState = 'card-interaction';
+        this.gameState = GAME_STATES.CARD_INTERACTION;
         
         // If all interaction cards have been processed, update state
         if (remaining === 0) {
@@ -1039,23 +1051,59 @@ class Game {
     }
 }
 
-// Global game instance
-let gameInstance = null;
+/**
+ * GameManager - Singleton pattern for managing the global game instance
+ * Ensures type-safe access to the game and prevents uninitialized access
+ */
+class GameManager {
+    static instance = null;
 
-function getGame() {
-    if (!gameInstance) {
-        gameInstance = new Game();
+    /**
+     * Initialize a new game
+     */
+    static initialize() {
+        try {
+            GameManager.instance = new Game();
+            GameManager.instance.start();
+            console.log('✓ Game initialized and started');
+            return GameManager.instance;
+        } catch (error) {
+            console.error('Error initializing game:', error);
+            throw error;
+        }
     }
-    return gameInstance;
+
+    /**
+     * Get the current game instance
+     */
+    static getInstance() {
+        if (!GameManager.instance) {
+            throw new Error('Game not initialized. Call GameManager.initialize() first.');
+        }
+        return GameManager.instance;
+    }
+
+    /**
+     * Check if a game is currently active
+     */
+    static isInitialized() {
+        return GameManager.instance !== null;
+    }
+
+    /**
+     * Reset the game instance (for cleanup)
+     */
+    static reset() {
+        GameManager.instance = null;
+    }
 }
 
+// Legacy function for backward compatibility
+function getGame() {
+    return GameManager.getInstance();
+}
+
+// Legacy function for backward compatibility
 function newGame() {
-    try {
-        gameInstance = new Game();
-        gameInstance.start();
-        return gameInstance;
-    } catch (error) {
-        console.error('Error initializing game:', error);
-        throw error;
-    }
+    return GameManager.initialize();
 }

@@ -4,68 +4,126 @@
  */
 
 /**
- * Helper function - Build HTML for defeated monsters list
- * Used in both weapon display and combat choice display
+ * UIBuilder - Centralized UI component builder
+ * Consolidates all card and element rendering for consistent styling and easier maintenance
  */
-function buildDefeatedMonstersHtml(weaponDefeatedMonsters, containerClass = 'weapon-monsters') {
-    const defeatedMonsters = [...weaponDefeatedMonsters].sort((a, b) => b.rank - a.rank);
-    if (defeatedMonsters.length === 0) {
-        return '<div class="weapon-status">Unused</div>';
-    }
-    let html = `<div class="${containerClass}">`;
-    defeatedMonsters.forEach((monster, index) => {
-        const isLowest = index === defeatedMonsters.length - 1;
-        const bold = isLowest ? '<strong>' : '';
-        const boldEnd = isLowest ? '</strong>' : '';
-        html += `<div class="monster-item${isLowest ? ' lowest' : ''}">${bold}${monster.rank}${monster.suit}${boldEnd}</div>`;
-    });
-    html += '</div>';
-    return html;
-}
+class UIBuilder {
+    /**
+     * Build HTML for a single card element
+     * @param {Card} card - The card to render
+     * @param {number} index - Card position index
+     * @param {boolean} clickable - Whether card is interactive
+     * @param {boolean} processed - Whether card has been processed
+     * @returns {string} HTML string for the card
+     */
+    static buildCard(card, index, clickable = false, processed = false) {
+        const suitClass = UIBuilder.getSuitClass(card.suit);
+        const clickHandler = clickable ? `onclick="selectCard(${index})"` : '';
+        const clickableClass = clickable ? 'clickable' : '';
+        const processedClass = processed ? 'processed' : '';
 
-/**
- * Helper function - Build weapon display HTML
- * Consolidates weapon card rendering for reuse across multiple UI sections
- */
-function buildWeaponDisplayHtml(game, isCompact = false) {
-    const containerClass = isCompact ? 'weapon-display-wrapper' : '';
-    const monstersClass = isCompact ? 'weapon-monsters-small' : 'weapon-monsters';
-    
-    if (!game.player.equippedWeapon) {
         return `
-            <div class="${containerClass}">
-                <div class="weapon-label">Equipped Weapon</div>
-                <div class="weapon-card empty">
-                    <div style="color: var(--text-secondary); font-size: 1.2em;">No Weapon</div>
-                    <div class="weapon-status">Barehanded</div>
-                </div>
+            <div class="card ${suitClass} ${clickableClass} ${processedClass}" ${clickHandler}>
+                <div class="card-rank">${card.rank}</div>
+                <div class="card-suit">${card.suit}</div>
+                <div class="card-name">${card.name}</div>
             </div>
         `;
     }
 
-    const weapon = game.player.equippedWeapon;
-    const status = game.getPlayerStatus();
-    const monstersListHtml = buildDefeatedMonstersHtml(status.weaponDefeatedMonsters, monstersClass);
-    
-    // Build degradation warning if weapon is locked to specific monsters
-    let degradationWarning = '';
-    if (game.player.weaponMaxMonsterValue !== null) {
-        degradationWarning = `<div class="weapon-degradation-warning">⚠️ Max usable: ${game.player.weaponMaxMonsterValue}</div>`;
+    /**
+     * Build HTML for defeated monsters list
+     * Used in weapon displays
+     * @param {Array} weaponDefeatedMonsters - Array of defeated monster cards
+     * @param {string} containerClass - CSS class for the container
+     * @returns {string} HTML string for the monster list
+     */
+    static buildDefeatedMonsters(weaponDefeatedMonsters, containerClass = 'weapon-monsters') {
+        const defeatedMonsters = [...weaponDefeatedMonsters].sort((a, b) => b.rank - a.rank);
+        if (defeatedMonsters.length === 0) {
+            return '<div class="weapon-status">Unused</div>';
+        }
+        let html = `<div class="${containerClass}">`;
+        defeatedMonsters.forEach((monster, index) => {
+            const isLowest = index === defeatedMonsters.length - 1;
+            const bold = isLowest ? '<strong>' : '';
+            const boldEnd = isLowest ? '</strong>' : '';
+            html += `<div class="monster-item${isLowest ? ' lowest' : ''}">${bold}${monster.rank}${monster.suit}${boldEnd}</div>`;
+        });
+        html += '</div>';
+        return html;
     }
-    
-    return `
-        <div class="${containerClass}">
-            <div class="weapon-label">Equipped Weapon</div>
-            <div class="weapon-card-container">
-                <div class="weapon-card diamonds">
-                    <div class="card-rank">${weapon.rank}</div>
-                    <div class="card-suit">♦️</div>
+
+    /**
+     * Build HTML for equipped weapon display
+     * @param {Game} game - The game instance
+     * @param {boolean} isCompact - Whether to use compact styling
+     * @returns {string} HTML string for weapon display
+     */
+    static buildWeapon(game, isCompact = false) {
+        const containerClass = isCompact ? 'weapon-display-wrapper' : '';
+        const monstersClass = isCompact ? 'weapon-monsters-small' : 'weapon-monsters';
+        
+        if (!game.player.equippedWeapon) {
+            return `
+                <div class="${containerClass}">
+                    <div class="weapon-label">Equipped Weapon</div>
+                    <div class="weapon-card empty">
+                        <div style="color: var(--text-secondary); font-size: 1.2em;">No Weapon</div>
+                        <div class="weapon-status">Barehanded</div>
+                    </div>
                 </div>
-                ${monstersListHtml}
+            `;
+        }
+
+        const weapon = game.player.equippedWeapon;
+        const status = game.getPlayerStatus();
+        const monstersListHtml = UIBuilder.buildDefeatedMonsters(status.weaponDefeatedMonsters, monstersClass);
+        
+        // Build degradation warning if weapon is locked to specific monsters
+        let degradationWarning = '';
+        if (game.player.weaponMaxMonsterValue !== null) {
+            degradationWarning = `<div class="weapon-degradation-warning">⚠️ Max usable: ${game.player.weaponMaxMonsterValue}</div>`;
+        }
+        
+        return `
+            <div class="${containerClass}">
+                <div class="weapon-label">Equipped Weapon</div>
+                <div class="weapon-card-container">
+                    <div class="weapon-card diamonds">
+                        <div class="card-rank">${weapon.rank}</div>
+                        <div class="card-suit">♦️</div>
+                    </div>
+                    ${monstersListHtml}
+                </div>
+                ${degradationWarning}
             </div>
-            ${degradationWarning}
-        </div>
-    `;
+        `;
+    }
+
+    /**
+     * Get CSS class for card suit
+     * @param {string} suit - The suit symbol
+     * @returns {string} CSS class name
+     */
+    static getSuitClass(suit) {
+        switch(suit) {
+            case '♠️': return 'spades';
+            case '♣️': return 'clubs';
+            case '♦️': return 'diamonds';
+            case '♥️': return 'hearts';
+            default: return '';
+        }
+    }
+}
+
+/**
+ * Helper function - Build HTML for defeated monsters list
+ * Used in both weapon display and combat choice display
+ * @deprecated Use UIBuilder.buildDefeatedMonsters instead
+ */
+function buildDefeatedMonstersHtml(weaponDefeatedMonsters, containerClass = 'weapon-monsters') {
+    return UIBuilder.buildDefeatedMonsters(weaponDefeatedMonsters, containerClass);
 }
 
 // Get elements
@@ -129,13 +187,13 @@ function updateInteractionCountLine() {
     const game = getGame();
     
     // Hide interaction count line in non-room states or during room-decision
-    if (game.gameState === 'menu' || game.gameState === 'game-over' || game.gameState === 'room-decision') {
+    if (game.gameState === GAME_STATES.MENU || game.gameState === GAME_STATES.GAME_OVER || game.gameState === GAME_STATES.ROOM_DECISION) {
         interactionCountLine.innerHTML = '';
         return;
     }
     
     // Show interaction count during card interaction, combat choice, and room complete phases
-    if (game.currentRoom && (game.gameState === 'card-interaction' || game.gameState === 'combat-choice' || game.gameState === 'room-complete')) {
+    if (game.currentRoom && (game.gameState === GAME_STATES.CARD_INTERACTION || game.gameState === GAME_STATES.COMBAT_CHOICE || game.gameState === GAME_STATES.ROOM_COMPLETE)) {
         const processed = game.currentRoom.processedIndices.length;
         const cardsToProcess = game.currentRoom.isFinalRoom ? game.currentRoom.cards.length : 3;
         const countText = `Interacted with ${processed} of ${cardsToProcess} cards`;
@@ -164,23 +222,23 @@ function updateGameDisplay() {
 
         // Update weapon and monster display
         updateWeaponDisplay();
-        if (game.gameState === 'combat-choice') {
+        if (game.gameState === GAME_STATES.COMBAT_CHOICE) {
             updateMonsterDisplay();
         }
 
         // Show appropriate game phase
         switch (game.gameState) {
-            case 'room-decision':
+            case GAME_STATES.ROOM_DECISION:
                 displayRoomDecision();
                 break;
-            case 'card-interaction':
-            case 'combat-choice':
+            case GAME_STATES.CARD_INTERACTION:
+            case GAME_STATES.COMBAT_CHOICE:
                 displayCardInteraction();
                 break;
-            case 'room-complete':
+            case GAME_STATES.ROOM_COMPLETE:
                 displayRoomComplete();
                 break;
-            case 'game-over':
+            case GAME_STATES.GAME_OVER:
                 displayGameOver();
                 break;
         }
@@ -240,7 +298,7 @@ function updateWeaponDisplay() {
     const game = getGame();
 
     // If in combat-choice state, don't update here (updateMonsterDisplay handles it)
-    if (game.gameState === 'combat-choice') {
+    if (game.gameState === GAME_STATES.COMBAT_CHOICE) {
         return;
     }
 
@@ -475,7 +533,7 @@ function playerFlees() {
 function playerStays() {
     const game = getGame();
     game.currentRoom.decidedToStay = true;
-    game.gameState = 'card-interaction';
+    game.gameState = GAME_STATES.CARD_INTERACTION;
     updateGameDisplay();
 }
 
@@ -499,7 +557,7 @@ function fightWithWeapon() {
 
 function nextRoom() {
     const game = getGame();
-    if (game.gameState === 'game-over') {
+    if (game.gameState === GAME_STATES.GAME_OVER) {
         showGameOverScreen();
     } else {
         game.enterNextRoom();
@@ -517,34 +575,23 @@ function startNewGame() {
         console.error('Error starting new game:', error);
         alert('Error starting game. Check console for details.');
     }
+/**
+ * Helper function - Build weapon display HTML
+ * @deprecated Use UIBuilder.buildWeapon instead
+ */
+function buildWeaponDisplayHtml(game, isCompact = false) {
+    return UIBuilder.buildWeapon(game, isCompact);
 }
 
 /**
- * Helper functions
+ * Legacy function names for backward compatibility
  */
 function createCardHTML(card, index, clickable = false, processed = false) {
-    const suitClass = getSuitClass(card.suit);
-    const clickHandler = clickable ? `onclick="selectCard(${index})"` : '';
-    const clickableClass = clickable ? 'clickable' : '';
-    const processedClass = processed ? 'processed' : '';
-
-    return `
-        <div class="card ${suitClass} ${clickableClass} ${processedClass}" ${clickHandler}>
-            <div class="card-rank">${card.rank}</div>
-            <div class="card-suit">${card.suit}</div>
-            <div class="card-name">${card.name}</div>
-        </div>
-    `;
+    return UIBuilder.buildCard(card, index, clickable, processed);
 }
 
 function getSuitClass(suit) {
-    switch(suit) {
-        case '♠️': return 'spades';
-        case '♣️': return 'clubs';
-        case '♦️': return 'diamonds';
-        case '♥️': return 'hearts';
-        default: return '';
-    }
+    return UIBuilder.getSuitClass(suit);
 }
 
 /**
