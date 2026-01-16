@@ -575,6 +575,8 @@ function startNewGame() {
         console.error('Error starting new game:', error);
         alert('Error starting game. Check console for details.');
     }
+}
+
 /**
  * Helper function - Build weapon display HTML
  * @deprecated Use UIBuilder.buildWeapon instead

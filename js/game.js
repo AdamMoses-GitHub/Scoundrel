@@ -808,6 +808,7 @@ class Game {
                 : GAME_CONSTANTS.CARDS_TO_INTERACT;
             this.message += `\n(${processed}/${cardsToProcess} cards processed, ${remaining} remaining)`;
             this.gameState = GAME_STATES.CARD_INTERACTION;
+        }
 
         return true;
     }
