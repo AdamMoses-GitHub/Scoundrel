@@ -481,7 +481,8 @@ function displayGameOver() {
     const stats = game.getGameOverStats();
 
     // Save stats to persistent storage
-    saveStatsToStorage(stats);
+    StatsManager.getInstance().save(stats);
+    StatsManager.getInstance().updateDisplay();
 
     const resultClass = stats.won ? 'victory' : 'defeat';
     const resultTitle = stats.won ? '🏆 VICTORY!' : '💀 DEFEAT!';
@@ -785,7 +786,7 @@ function toggleStatsModal() {
     modal.classList.toggle('show');
     
     if (modal.classList.contains('show')) {
-        updateStatsDisplay();
+        StatsManager.getInstance().updateDisplay();
     }
     
     // Close dropdown when opening stats
@@ -795,40 +796,35 @@ function toggleStatsModal() {
     }
 }
 
+/**
+ * Legacy wrapper - kept for backward compatibility
+ * @deprecated Use StatsManager.getInstance().updateDisplay() instead
+ */
 function updateStatsDisplay() {
-    const stats = loadStatsFromStorage();
-    
-    document.getElementById('gamesPlayed').textContent = stats.played;
-    document.getElementById('gamesWon').textContent = stats.won;
-    document.getElementById('winRate').textContent = 
-        stats.played > 0 ? Math.round((stats.won / stats.played) * 100) + '%' : '0%';
-    document.getElementById('bestRun').textContent = `Room ${stats.bestRoom}`;
-    document.getElementById('totalCards').textContent = stats.totalCards;
-    document.getElementById('highestHP').textContent = stats.highestHP;
+    StatsManager.getInstance().updateDisplay();
 }
 
+/**
+ * Legacy wrapper - kept for backward compatibility
+ * @deprecated Use StatsManager.getInstance().getStats() instead
+ */
 function loadStatsFromStorage() {
-    const stored = localStorage.getItem('scoundrelStats');
-    if (stored) {
-        return JSON.parse(stored);
-    }
-    // Return default stats if none exist
-    return { played: 0, won: 0, bestRoom: 0, totalCards: 0, highestHP: 20 };
+    return StatsManager.getInstance().getStats();
 }
 
+/**
+ * Legacy wrapper - kept for backward compatibility
+ * @deprecated Use StatsManager.getInstance().save(gameStats) instead
+ */
 function saveStatsToStorage(gameStats) {
-    const currentStats = loadStatsFromStorage();
-    
-    // Update stats based on game outcome
-    currentStats.played += 1;
-    if (gameStats.won) {
-        currentStats.won += 1;
-    }
-    currentStats.bestRoom = Math.max(currentStats.bestRoom, gameStats.roomsCompleted);
-    currentStats.totalCards += gameStats.roomsCompleted;  // Each room = cards processed
-    currentStats.highestHP = Math.max(currentStats.highestHP, gameStats.finalHp);
-    
-    localStorage.setItem('scoundrelStats', JSON.stringify(currentStats));
+    StatsManager.getInstance().save(gameStats);
+}
+
+/**
+ * Reset all game statistics with confirmation
+ */
+function resetStats() {
+    StatsManager.getInstance().reset();
 }
 
 // Helper function to format action names for display
@@ -925,8 +921,11 @@ document.addEventListener('click', function(event) {
 });
 
 /**
- * Initialize the game
+ * Initialize the game and load statistics
  */
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize StatsManager and load persisted stats from localStorage
+    StatsManager.getInstance().updateDisplay();
+    
     showMainMenu();
 });

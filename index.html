@@ -53,7 +53,8 @@
                 <h3>Weapon Degradation</h3>
                 <ul>
                     <li>Once a weapon is used on a monster, it can <strong>only be used on weaker monsters</strong> going forward</li>
-                    <li><strong>Example:</strong> Use a Diamond 5 on a Jack (11) → weapon locked at value 11 → next monster of value 12 appears → cannot use weapon, must fight barehanded</li>
+                    <li><strong>Example:</strong> Use a Diamond 5 on a Jack (11) → weapon locked to maximum value 11 → next monster of value 12 appears → cannot use weapon (need value < 11), must fight barehanded</li>
+                    <li><strong>Key Mechanic:</strong> Weapon remembers the strongest monster it fought and can only be used on monsters weaker than that</li>
                     <li>Equipping a new weapon <strong>resets degradation</strong> (new weapon starts fresh)</li>
                     <li>Strategy: Don't waste high-value weapons on weak monsters, and upgrade to better weapons when available</li>
                 </ul>
@@ -61,8 +62,26 @@
                 <h3>Fleeing Rules</h3>
                 <ul>
                     <li>You <strong>cannot flee twice in a row</strong> - you must face the next room</li>
-                    <li>You can flee any other time</li>
+                    <li>You can flee any other time (except the final room)</li>
                     <li>When you stay and complete a room normally, the "fled last room" flag resets</li>
+                    <li><strong>Final room restriction:</strong> When 4 or fewer cards remain (final room), you cannot flee - you must interact with all remaining cards</li>
+                </ul>
+
+                <h3>Final Room</h3>
+                <ul>
+                    <li>When 4 or fewer cards remain in the deck, the next room is the "final room"</li>
+                    <li><strong>In the final room:</strong> Only those remaining cards are drawn (not padded to 4)</li>
+                    <li>You must interact with <strong>ALL remaining cards</strong> (not just 3 of 4)</li>
+                    <li>You <strong>cannot flee</strong> the final room</li>
+                    <li>Any card you don't select carries over to the final room (if more than 4 cards remain initially)</li>
+                </ul>
+
+                <h3>Card Carry-Over</h3>
+                <ul>
+                    <li>If you stay in a room, any cards you don't select are carried over to the next room</li>
+                    <li><strong>Example:</strong> 4-card room, you select 3 monsters but skip the potion → the potion appears in the next room</li>
+                    <li>Carry-over cards appear in the same position they were in the previous room</li>
+                    <li>The next room draws fewer new cards to make room for the carry-over card</li>
                 </ul>
 
                 <h3>Victory & Defeat</h3>
@@ -75,8 +94,11 @@
                 <ul>
                     <li>Better weapons significantly reduce damage - prioritize them early</li>
                     <li>Potions are valuable but limited - save them for critical situations</li>
-                    <li>Fleeing can save you from tough hands, but resets your deck position</li>
-                    <li>High monsters early are deadly barehanded - focus on weapons</li>
+                    <li>Fleeing shuffles unprocessed cards to the deck bottom, giving you different rooms</li>
+                    <li>Weapon degradation punishes wasting high weapons on weak monsters - plan ahead</li>
+                    <li>High monsters early are deadly barehanded - focus on weapons first</li>
+                    <li>Plan for the final room: Don't save potions if you'll face it soon</li>
+                    <li>Carry-over cards let you escape bad rooms - skip a dangerous card to draw it later</li>
                 </ul>
 
                 <div class="button-group" style="margin-top: 40px;">
@@ -147,13 +169,19 @@
                         <button class="modal-close" onclick="toggleStatsModal()">✕</button>
                     </div>
                     <div id="statsContent" class="modal-body">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                             <div><strong>Games Played:</strong> <span id="gamesPlayed">0</span></div>
                             <div><strong>Games Won:</strong> <span id="gamesWon">0</span></div>
                             <div><strong>Win Rate:</strong> <span id="winRate">0%</span></div>
                             <div><strong>Best Run:</strong> <span id="bestRun">Room 0</span></div>
                             <div><strong>Total Cards Defeated:</strong> <span id="totalCards">0</span></div>
                             <div><strong>Highest HP Reached:</strong> <span id="highestHP">20</span></div>
+                            <div><strong>Current Streak:</strong> <span id="currentStreak">0</span></div>
+                            <div><strong>Longest Streak:</strong> <span id="longestStreak">0</span></div>
+                            <div><strong>Total Times Fled:</strong> <span id="totalFlees">0</span></div>
+                        </div>
+                        <div style="text-align: center; margin-top: 20px;">
+                            <button onclick="resetStats()" style="padding: 10px 20px; background-color: var(--accent-red); color: white; border: none; border-radius: 4px; cursor: pointer;">🔄 Reset Statistics</button>
                         </div>
                     </div>
                 </div>
@@ -164,6 +192,8 @@
         <div id="gameOverScreen" class="screen"></div>
     </div>
 
+    <!-- Statistics Manager -->
+    <script src="js/statsManager.js"></script>
     <!-- Game Engine -->
     <script src="js/game.js"></script>
     <!-- UI Controller -->

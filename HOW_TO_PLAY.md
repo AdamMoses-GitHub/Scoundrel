@@ -164,23 +164,27 @@ Here's how it works:
 
 1. **First use**: Weapon can be used on any monster
 2. **After first use**: Weapon "remembers" the strongest monster it fought
-3. **Going forward**: Weapon can ONLY be used on monsters weaker than that value
+3. **Going forward**: Weapon can ONLY be used on monsters **weaker than** that value
 
 **Example Progression**:
 - You equip a Diamond 5 (weapon value 5)
 - Room 1: You fight a 7-monster with it
-  - Weapon is now "locked" at value 7 (can't be used on monsters ≥ 7)
+  - Weapon is now "locked" at maximum value 7 (can only be used on monsters < 7, i.e., values 2-6)
 - Room 2: An 8-monster appears
-  - Weapon can't be used (8 ≥ 7)
+  - Weapon can't be used (8 >= 7, not strictly less)
   - Must fight barehanded: 8 damage
 - Room 3: A 6-monster appears
-  - Weapon CAN be used (6 < 7)
+  - Weapon CAN be used (6 < 7) ✓
   - Take 1 damage (6 - 5 = 1)
+- Room 4: A 5-monster appears
+  - Weapon can't be used (5 is not < 5)
+  - Must fight barehanded: 5 damage
 
 **Why This Matters**:
-- Early weapon use degrades them
-- "Wasting" a high weapon on a weak monster locks it down
+- Weapon degradation is **irreversible** - using a weapon on ANY monster locks you into not being able to use it on monsters of that value or stronger
+- "Wasting" a high weapon on a weak monster locks it to that weak monster value
 - Upgrading to a better weapon resets the degradation (fresh start)
+- **Strategy**: Save weapons for use only when necessary, or use high weapons early on high monsters to avoid locking them to lower values
 
 ### Weapon Upgrading
 
@@ -189,6 +193,44 @@ When you find a new weapon:
 - **New weapon has no degradation history** (starts fresh)
 - Example: Diamond 5 (degraded to max 7) → Pick up Diamond 9
   - Diamond 9 can be used on any monster (no history yet)
+
+---
+
+## Final Room & Carry-Over Mechanics
+
+### The Final Room
+
+When fewer than 4 cards remain in the deck:
+
+1. **Final room is triggered** - The next room becomes special
+2. **Exactly those remaining cards are drawn** (not padded to 4)
+   - Example: 2 cards left → 2-card final room
+3. **You MUST interact with ALL cards** (unlike normal rooms where you select 3 of 4)
+4. **You CANNOT flee** the final room (flee button is disabled)
+5. **No auto-discard** - You must process every remaining card
+
+**Strategic Importance**: 
+- Know roughly when the final room approaches (after ~11 rooms)
+- Don't save potions if you're close to the final room
+- The final room forces engagement, so plan weapon/potion use accordingly
+
+### Card Carry-Over System
+
+When you STAY in a room and select only some cards:
+
+1. **Unselected cards carry over** to the next room
+2. **Carry-over position matters** - Cards appear in the same position as before
+3. **Next room draws fewer new cards** to accommodate the carry-over card(s)
+   - Example: 1 carry-over card → next room draws 3 new cards (total 4)
+4. **Useful for avoiding bad situations**
+   - You can intentionally skip a strong monster to draw it later
+   - You can carry potions forward to use when you're in worse shape
+
+**Example Scenario**:
+- Room 5 has: Weapon, Monster 10, Potion, Monster 8
+- You stay and select: Weapon, Monster 8, Potion
+- Room 6 will automatically include Monster 10 in the same position + 3 new cards drawn
+- This gives you more preparation time before facing that Monster 10
 
 ---
 
@@ -439,6 +481,71 @@ When you find a new weapon:
 - Track roughly how many cards remain
 - Later games are harder (less HP recovery time)
 - Early mistakes cost more (more rooms to recover)
+
+---
+
+## Advanced Mechanics & Edge Cases
+
+### 1. Weapon Further Degrades on Weaker Monsters
+
+Once a weapon is locked to a maximum value, using it on a WEAKER monster further degrades it:
+
+**Example**:
+- Diamond 7 used on Monster 10 → locked at max 10
+- Diamond 7 used on Monster 8 → locked at max 8 (further degraded!)
+- Diamond 7 used on Monster 6 → locked at max 6 (even worse)
+
+**Strategic Impact**:
+- Once degraded, weapons can only get worse, never better
+- Avoid using a locked weapon if possible - fight barehanded instead
+- Upgrading to a new weapon is often better than using a degraded one
+
+### 2. Weapon vs. Barehanded Trade-off
+
+**When to use weapon:**
+- Weapon will reduce damage by 2+ points
+- Weapon can still be used (not locked too low)
+- You're not unnecessarily degrading it further
+
+**When to fight barehanded:**
+- Weapon is severely degraded and can't be used
+- Weapon would degrade to a useless value
+- Better to take the damage and save weapon for later
+
+### 3. Potion Healing Mechanics
+
+Healing always caps at maximum HP:
+- 18 HP + Potion 5 = 20 HP (not 23)
+- Healing is never wasted mechanically, but tactically it can be (using at full HP)
+
+### 4. Final Room Preparation Strategy
+
+Since final room forces all remaining cards:
+- Plan potion use before the final room
+- Don't waste a high weapon in a normal room if final room is coming soon
+- If you're injured heading into final room, prioritize healing
+
+### 5. Carry-Over Strategic Use
+
+**Intentional Skipping**:
+- Skip dangerous monsters to buy time for weapon upgrades
+- Skip duplicate potions to use them in harder rooms
+- Skip low-value weapons to find better ones
+
+**Example Strategy**:
+- Room 8: See Monster 12, Weapon 3, Potion, Monster 5
+- Your weapon is locked at value 7
+- You can only use weapon on Monster 5, and Monster 12 will one-shot you
+- STAY and select: Weapon 3, Potion, Monster 5
+- Monster 12 carries to Room 9 (giving you 1 more room to find Diamond 8+)
+
+### 6. The "Carry-Over Tax"
+
+By carrying a card forward, you:
+- ✓ Gain: Time to prepare with room to get better equipment
+- ✗ Cost: Deck position changes (might draw different monsters sooner)
+
+Balance is key!
 
 ---
 
