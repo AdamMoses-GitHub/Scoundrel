@@ -8,6 +8,30 @@
  * Consolidates all card and element rendering for consistent styling and easier maintenance
  */
 class UIBuilder {
+    static cachedElements = {};
+
+    /**
+     * Get or cache a DOM element by ID
+     * @param {string} id - Element ID
+     * @returns {HTMLElement|null} The cached element or null if not found
+     */
+    static getCachedElement(id) {
+        if (!this.cachedElements[id]) {
+            const element = document.getElementById(id);
+            if (element) {
+                this.cachedElements[id] = element;
+            }
+        }
+        return this.cachedElements[id] || null;
+    }
+
+    /**
+     * Clear element cache (call on game reset or page unload)
+     */
+    static clearElementCache() {
+        this.cachedElements = {};
+    }
+
     /**
      * Build HTML for a single card element
      * @param {Card} card - The card to render

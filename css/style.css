@@ -13,6 +13,9 @@
     --hp-critical: #c41e3a;
     --hp-warning: #d4a81e;
     --hp-healthy: #2d7a2d;
+    --card-border-radius: 6px;
+    --card-padding: 15px;
+    --card-border-width: 2px;
 }
 
 * {
@@ -814,9 +817,9 @@ button:disabled {
 .card {
     aspect-ratio: 2/3;
     background-color: var(--bg-card);
-    border: 2px solid var(--border-gold);
-    border-radius: 6px;
-    padding: 15px;
+    border: var(--card-border-width) solid var(--border-gold);
+    border-radius: var(--card-border-radius);
+    padding: var(--card-padding);
     display: flex;
     flex-direction: column;
     justify-content: space-between;

@@ -283,6 +283,9 @@ class GameLogger {
  */
 class Card {
     constructor(suit, rank) {
+        if (rank < GAME_CONSTANTS.MIN_RANK || rank > GAME_CONSTANTS.MAX_RANK) {
+            throw new Error(`Invalid card rank: ${rank}`);
+        }
         this.suit = suit;
         this.rank = rank;
     }

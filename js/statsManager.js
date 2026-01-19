@@ -132,7 +132,11 @@ class StatsManager {
         try {
             localStorage.setItem(StatsManager.STORAGE_KEY, JSON.stringify(this.stats));
         } catch (error) {
-            console.error('Error persisting stats to localStorage:', error);
+            if (error.name === 'QuotaExceededError') {
+                console.error('localStorage quota exceeded - unable to save stats');
+            } else {
+                console.error('Error persisting stats to localStorage:', error);
+            }
         }
     }
 
@@ -174,7 +178,7 @@ class StatsManager {
         };
 
         Object.entries(displayMapping).forEach(([elementId, value]) => {
-            const element = document.getElementById(elementId);
+            const element = UIBuilder.getCachedElement(elementId);
             if (element) {
                 element.textContent = value;
             }
