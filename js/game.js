@@ -77,9 +77,37 @@ const RankNames = {
  * Logs to console (debug), game log array (display), and tracks event history
  */
 class GameLogger {
+    static ACTION_EMOJI = {
+        'flee': '💨',
+        'stay': '🏃',
+        'fight-barehanded': '👊',
+        'fight-weapon': '⚔️',
+        'use-potion': '🧪',
+        'equip-weapon': '🔫',
+        'combat-resolved': '✓',
+        'room-complete': '✨',
+        'victory': '🏆',
+        'defeat': '💀'
+    };
+
+    static STATUS_EMOJI = {
+        'hp-change': '❤️',
+        'room-advance': '📍',
+        'victory': '🏆',
+        'defeat': '💀'
+    };
+
     constructor() {
         this.logs = [];           // All log entries with timestamps
         this.actionCounter = 0;   // Sequential action numbering
+    }
+
+    /**
+     * Get current timestamp
+     * @returns {string} Formatted timestamp
+     */
+    getTimestamp() {
+        return new Date().toLocaleTimeString();
     }
 
     /**
@@ -95,7 +123,7 @@ class GameLogger {
         const entry = {
             action: this.actionCounter,
             type: 'card-movement',
-            timestamp: new Date().toLocaleTimeString(),
+            timestamp: this.getTimestamp(),
             card: card.getName(),
             cardSymbol: card.toString(),
             from,
@@ -123,7 +151,7 @@ class GameLogger {
         const entry = {
             action: this.actionCounter,
             type: 'weapon-change',
-            timestamp: new Date().toLocaleTimeString(),
+            timestamp: this.getTimestamp(),
             weapon: weapon.getName(),
             weaponSymbol: weapon.toString(),
             changeType,
@@ -151,7 +179,7 @@ class GameLogger {
         const entry = {
             action: this.actionCounter,
             type: 'state-transition',
-            timestamp: new Date().toLocaleTimeString(),
+            timestamp: this.getTimestamp(),
             from: fromState,
             to: toState,
             trigger
@@ -171,24 +199,13 @@ class GameLogger {
         const entry = {
             action: this.actionCounter,
             type: 'action',
-            timestamp: new Date().toLocaleTimeString(),
+            timestamp: this.getTimestamp(),
             actionType: action,
             details
         };
         this.logs.push(entry);
 
-        const emoji = {
-            'flee': '💨',
-            'stay': '🏃',
-            'fight-barehanded': '👊',
-            'fight-weapon': '⚔️',
-            'use-potion': '🧪',
-            'equip-weapon': '🔫',
-            'combat-resolved': '✓',
-            'room-complete': '✨',
-            'victory': '🏆',
-            'defeat': '💀'
-        }[action] || '•';
+        const emoji = GameLogger.ACTION_EMOJI[action] || '•';
 
         const detailStr = Object.entries(details)
             .map(([k, v]) => `${k}=${v}`)
@@ -208,7 +225,7 @@ class GameLogger {
         const entry = {
             action: this.actionCounter,
             type: 'combat',
-            timestamp: new Date().toLocaleTimeString(),
+            timestamp: this.getTimestamp(),
             monster: monster.getName(),
             monsterSymbol: monster.toString(),
             method,
@@ -233,18 +250,13 @@ class GameLogger {
         const entry = {
             action: this.actionCounter,
             type: 'status-update',
-            timestamp: new Date().toLocaleTimeString(),
+            timestamp: this.getTimestamp(),
             eventType,
             stats
         };
         this.logs.push(entry);
 
-        const emoji = {
-            'hp-change': '❤️',
-            'room-advance': '📍',
-            'victory': '🏆',
-            'defeat': '💀'
-        }[eventType] || '•';
+        const emoji = GameLogger.STATUS_EMOJI[eventType] || '•';
 
         console.log(`[${entry.action}] ${emoji} ${eventType}: Room ${stats.roomNumber}, HP ${stats.hp}/${stats.maxHp}`);
     }
@@ -337,6 +349,13 @@ class Card {
  * Deck class - manages the 44-card deck
  */
 class Deck {
+    static MONSTER_RANK_MIN = GAME_CONSTANTS.MIN_RANK;
+    static MONSTER_RANK_MAX = GAME_CONSTANTS.MAX_RANK;
+    static WEAPON_RANK_MIN = GAME_CONSTANTS.MIN_RANK;
+    static WEAPON_RANK_MAX = GAME_CONSTANTS.WEAPON_MAX_RANK;
+    static POTION_RANK_MIN = GAME_CONSTANTS.MIN_RANK;
+    static POTION_RANK_MAX = GAME_CONSTANTS.WEAPON_MAX_RANK;
+
     constructor() {
         this.cards = [];
         this.initializeDeck();
@@ -345,16 +364,16 @@ class Deck {
 
     initializeDeck() {
         // All Black cards (Spades/Clubs 2-Ace) = Monsters (26 cards)
-        for (let rank = GAME_CONSTANTS.MIN_RANK; rank <= GAME_CONSTANTS.MAX_RANK; rank++) {
+        for (let rank = Deck.MONSTER_RANK_MIN; rank <= Deck.MONSTER_RANK_MAX; rank++) {
             this.cards.push(new Card(Suit.SPADES, rank));
             this.cards.push(new Card(Suit.CLUBS, rank));
         }
         // All Diamonds (2-10) = Weapons (9 cards)
-        for (let rank = GAME_CONSTANTS.MIN_RANK; rank <= GAME_CONSTANTS.WEAPON_MAX_RANK; rank++) {
+        for (let rank = Deck.WEAPON_RANK_MIN; rank <= Deck.WEAPON_RANK_MAX; rank++) {
             this.cards.push(new Card(Suit.DIAMONDS, rank));
         }
         // All Hearts (2-10) = Potions (9 cards)
-        for (let rank = GAME_CONSTANTS.MIN_RANK; rank <= GAME_CONSTANTS.WEAPON_MAX_RANK; rank++) {
+        for (let rank = Deck.POTION_RANK_MIN; rank <= Deck.POTION_RANK_MAX; rank++) {
             this.cards.push(new Card(Suit.HEARTS, rank));
         }
         // Total: 26 + 9 + 9 = 44 cards

@@ -158,6 +158,9 @@ let gameLog = [];
 let discardPileOrder = 'newest'; // 'newest' (most recent first) or 'oldest' (oldest first)
 let logReverseOrder = true; // true = newest first, false = oldest first
 
+// HP display constants
+const HP_CRITICAL_THRESHOLD = 0.3; // HP bar shows critical (red) at 30% or below
+
 // Game phase content areas
 const roomDecisionContent = document.getElementById('roomDecisionContent');
 const cardInteractionContent = document.getElementById('cardInteractionContent');
@@ -299,7 +302,7 @@ function updateStatsBar() {
     // Update HP bar color
     const hpFill = document.getElementById('hpFill');
     const hpPercent = (status.hp / status.maxHp);
-    if (hpPercent < 0.3) {
+    if (hpPercent < HP_CRITICAL_THRESHOLD) {
         hpFill.classList.add('critical');
     } else {
         hpFill.classList.remove('critical');
