@@ -32,12 +32,21 @@ const GAME_STATES = {
 };
 
 /**
+ * Utility function - Get random integer from 0 to max (exclusive)
+ * @param {number} max - Upper bound (exclusive)
+ * @returns {number} Random integer in range [0, max)
+ */
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+}
+
+/**
  * Utility function - Fisher-Yates shuffle
  * Shuffles array in-place
  */
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+        const j = getRandomInt(i + 1);
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
@@ -393,10 +402,12 @@ class Player {
     }
 
     takeDamage(amount) {
-        this.hp -= amount;
+        if (amount < 0) return; // Ignore negative damage
+        this.hp = Math.max(0, this.hp - amount);
     }
 
     heal(amount) {
+        if (amount < 0) return; // Ignore negative healing
         this.hp = Math.min(this.hp + amount, this.maxHp);
     }
 
@@ -509,6 +520,20 @@ class Game {
             deckRemaining: this.deck.cards.length,
             discardCount: this.discardPile.length
         });
+    }
+
+    /**
+     * Get formatted card progress message
+     * @param {number} processed - Number of cards processed
+     * @param {boolean} isFinalRoom - Whether this is the final room
+     * @returns {string} Formatted progress message
+     */
+    getCardProgressMessage(processed, isFinalRoom) {
+        const cardsToProcess = isFinalRoom 
+            ? this.currentRoom.cards.length 
+            : GAME_CONSTANTS.CARDS_TO_INTERACT;
+        const remaining = cardsToProcess - processed;
+        return `\n(${processed}/${cardsToProcess} cards processed, ${remaining} remaining)`;
     }
 
     enterNextRoom() {
@@ -806,10 +831,7 @@ class Game {
             this.message += `\nStatus: ${this.player.hp}/${this.player.maxHp} HP | Deck: ${this.deck.remaining()} cards`;
             this.gameState = GAME_STATES.ROOM_COMPLETE;
         } else {
-            const cardsToProcess = this.currentRoom.isFinalRoom 
-                ? this.currentRoom.cards.length 
-                : GAME_CONSTANTS.CARDS_TO_INTERACT;
-            this.message += `\n(${processed}/${cardsToProcess} cards processed, ${remaining} remaining)`;
+            this.message += this.getCardProgressMessage(processed, this.currentRoom.isFinalRoom);
             this.gameState = GAME_STATES.CARD_INTERACTION;
         }
 
@@ -872,13 +894,8 @@ class Game {
         // Check if all interaction cards have been processed
         const remaining = this.checkAndCompleteRoom();
 
-        // Determine cards to process for progress display
-        const cardsToProcess = this.currentRoom.isFinalRoom 
-            ? this.currentRoom.cards.length 
-            : GAME_CONSTANTS.CARDS_TO_INTERACT;
-        
         // Always show processed count
-        this.message += `\n(${processed}/${cardsToProcess} cards processed, ${remaining} remaining)`;
+        this.message += this.getCardProgressMessage(processed, this.currentRoom.isFinalRoom);
         
         // Stay in card-interaction to show the progress
         this.gameState = GAME_STATES.CARD_INTERACTION;

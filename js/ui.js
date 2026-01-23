@@ -141,15 +141,6 @@ class UIBuilder {
     }
 }
 
-/**
- * Helper function - Build HTML for defeated monsters list
- * Used in both weapon display and combat choice display
- * @deprecated Use UIBuilder.buildDefeatedMonsters instead
- */
-function buildDefeatedMonstersHtml(weaponDefeatedMonsters, containerClass = 'weapon-monsters') {
-    return UIBuilder.buildDefeatedMonsters(weaponDefeatedMonsters, containerClass);
-}
-
 // Get elements
 const gameContainer = document.getElementById('gameContainer');
 const mainMenuScreen = document.getElementById('mainMenu');
