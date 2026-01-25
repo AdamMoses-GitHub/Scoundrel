@@ -225,6 +225,10 @@ function updateInteractionCountLine() {
 function updateGameDisplay() {
     try {
         const game = getGame();
+        if (!game) {
+            console.error('Game instance not available');
+            return;
+        }
 
         // Update stats bar
         updateStatsBar();

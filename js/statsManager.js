@@ -27,6 +27,11 @@ class StatsManager {
      */
     load() {
         try {
+            // Check if localStorage is available (private browsing blocks it)
+            if (!window.localStorage) {
+                console.warn('localStorage not available');
+                return this.getDefaultStats();
+            }
             const stored = localStorage.getItem(StatsManager.STORAGE_KEY);
             if (!stored) {
                 return this.getDefaultStats();
