@@ -697,11 +697,28 @@ class Game {
             this.currentRoom.decidedToStay = true;
             this.gameState = GAME_STATES.CARD_INTERACTION;
             this.message = `Room ${this.player.roomNumber}: You drew 4 cards.\n⚠️ You fled last room - you cannot flee again!`;
+            
+            console.log('🚪 FORCED STAY (fled last room):', {
+                roomNumber: this.player.roomNumber,
+                cardsInRoom: this.currentRoom.cards.map(c => c.toString()).join(', '),
+                hp: this.player.hp,
+                weapon: this.player.equippedWeapon ? this.player.equippedWeapon.toString() : 'none'
+            });
+            
             this.logger.logStateTransition('room-exit', 'card-interaction', 'forced-stay-after-flee');
         } else {
             this.gameState = GAME_STATES.ROOM_DECISION;
             const carryMessage = carryOverCard ? `\n♻️ Carried over: ${carryOverCard.getName()}` : '';
             this.message = `Room ${this.player.roomNumber}: You drew 4 cards.${carryMessage}`;
+            
+            console.log('💬 ROOM DECISION:', {
+                roomNumber: this.player.roomNumber,
+                cardsInRoom: this.currentRoom.cards.map(c => c.toString()).join(', '),
+                carriedOver: carryOverCard ? carryOverCard.toString() : 'none',
+                canFlee: !this.ranLastRoom && !this.currentRoom.isFinalRoom,
+                hp: this.player.hp,
+                weapon: this.player.equippedWeapon ? this.player.equippedWeapon.toString() : 'none'
+            });
         }
     }
 
@@ -709,6 +726,7 @@ class Game {
         // Validate state
         if (!this.currentRoom) {
             this.message = '✗ No room to flee from!';
+            console.log('❌ fleeRoom() rejected: No current room');
             return false;
         }
         
@@ -718,6 +736,7 @@ class Game {
                 reason: 'fled-last-room',
                 roomNumber: this.player.roomNumber
             });
+            console.log('❌ fleeRoom() rejected: Already fled last room');
             return false;
         }
 
@@ -728,8 +747,16 @@ class Game {
                 reason: 'final-room',
                 roomNumber: this.player.roomNumber
             });
+            console.log('❌ fleeRoom() rejected: Final room with', this.currentRoom.cards.length, 'cards');
             return false;
         }
+
+        console.log('💨 FLEE ACTION:', {
+            roomNumber: this.player.roomNumber,
+            cardsInRoom: this.currentRoom.cards.map(c => c.toString()).join(', '),
+            deckBefore: this.deck.remaining(),
+            hp: this.player.hp
+        });
 
         // Shuffle the cards and put to bottom of deck
         const fleedCards = [...this.currentRoom.cards];
@@ -748,6 +775,12 @@ class Game {
             hp: this.player.hp
         });
         
+        console.log('✅ Flee successful:', {
+            cardsShuffled: cardList,
+            deckAfter: this.deck.remaining(),
+            ranLastRoom: this.ranLastRoom
+        });
+        
         this.enterNextRoom();
         return true;
     }
@@ -756,28 +789,53 @@ class Game {
         // Validate current room exists
         if (!this.currentRoom) {
             this.message = '✗ No room in progress!';
+            console.log('❌ selectCard rejected: No current room');
             return false;
         }
 
         // Validate card index
         if (cardIndex < 0 || cardIndex >= this.currentRoom.cards.length) {
             this.message = '✗ Invalid card selection!';
+            console.log('❌ selectCard rejected: Invalid index', cardIndex);
             return false;
         }
 
         // Check if already processed
         if (this.currentRoom.processedIndices.includes(cardIndex)) {
             this.message = '✗ You already interacted with that card!';
+            console.log('❌ selectCard rejected: Card already processed', cardIndex);
             return false;
         }
 
         const card = this.currentRoom.cards[cardIndex];
+        console.log('\n🎴 CARD SELECTED:', {
+            cardIndex: cardIndex,
+            card: card.toString(),
+            type: card.getType(),
+            roomNumber: this.player.roomNumber,
+            processedCount: this.currentRoom.processedIndices.length,
+            totalCards: this.currentRoom.cards.length
+        });
 
         // If it's a monster, show combat choice instead of immediately fighting
         if (card.isMonster()) {
             this.currentRoom.selectedMonsterIndex = cardIndex;
             this.gameState = GAME_STATES.COMBAT_CHOICE;
             this.message = `You selected ${card.getName()}. Choose how to fight:`;
+            
+            const canUseWeapon = this.player.equippedWeapon && 
+                (this.player.weaponMaxMonsterValue === null || card.rank <= this.player.weaponMaxMonsterValue);
+            
+            console.log('⚔️ COMBAT CHOICE:', {
+                monster: card.toString(),
+                monsterValue: card.rank,
+                weapon: this.player.equippedWeapon ? this.player.equippedWeapon.toString() : 'none',
+                weaponValue: this.player.equippedWeapon ? this.player.equippedWeapon.rank : 0,
+                weaponMaxMonster: this.player.weaponMaxMonsterValue || 'unlimited',
+                canUseWeapon: canUseWeapon,
+                barehandedDamage: card.rank,
+                weaponDamage: this.player.equippedWeapon ? Math.max(0, card.rank - this.player.equippedWeapon.rank) : card.rank
+            });
             
             this.logger.logAction('select-card', {
                 cardIndex,
@@ -795,6 +853,13 @@ class Game {
         // Process weapons and potions
         let oldWeapon = null;
         if (card.isWeapon()) {
+            console.log('⚔️ WEAPON EQUIPPED:', {
+                oldWeapon: this.player.equippedWeapon ? this.player.equippedWeapon.toString() : 'none',
+                oldMaxMonster: this.player.weaponMaxMonsterValue || 'unlimited',
+                newWeapon: card.toString(),
+                weaponValue: card.rank
+            });
+            
             oldWeapon = this.player.equippedWeapon; // Capture old weapon before replacing
             this.player.equipWeapon(card);
             const oldWeaponName = oldWeapon ? oldWeapon.getName() : 'nothing';
@@ -818,8 +883,19 @@ class Game {
         } else if (card.isPotion()) {
             if (!this.player.usedPotionThisRoom) {
                 const healing = card.getValue();
+                const hpBefore = this.player.hp;
                 this.player.heal(healing);
                 this.player.usedPotionThisRoom = true;
+                
+                console.log('🧪 POTION CONSUMED:', {
+                    potion: card.toString(),
+                    potionValue: card.rank,
+                    hpBefore: hpBefore,
+                    hpAfter: this.player.hp,
+                    actualHeal: this.player.hp - hpBefore,
+                    maxHp: this.player.maxHp
+                });
+                
                 this.message += `🧪 Drank potion: +${healing} HP → ${this.player.hp}/${this.player.maxHp}`;
                 
                 this.logger.logAction('use-potion', {
@@ -831,6 +907,11 @@ class Game {
                     roomNumber: this.player.roomNumber
                 });
             } else {
+                console.log('❌ POTION IGNORED:', {
+                    potion: card.toString(),
+                    reason: 'Already drank potion this room'
+                });
+                
                 this.message += `⚠️ Already used a potion this room, ${card.getName()} has no effect`;
                 
                 this.logger.logAction('use-potion-rejected', {
@@ -872,15 +953,23 @@ class Game {
         // Validate state before processing
         if (!this.currentRoom) {
             this.message = '✗ No room in progress!';
+            console.log('❌ processCombatChoice rejected: No current room');
             return false;
         }
         if (this.currentRoom.selectedMonsterIndex === null) {
             this.message = '✗ No monster selected for combat!';
+            console.log('❌ processCombatChoice rejected: No monster selected');
             return false;
         }
 
         const monsterIndex = this.currentRoom.selectedMonsterIndex;
         const card = this.currentRoom.cards[monsterIndex];
+        
+        console.log('⚔️ COMBAT RESOLUTION:', {
+            method: useWeapon ? 'weapon' : 'barehanded',
+            monster: card.toString(),
+            monsterValue: card.rank
+        });
         
         // Clear the selected monster
         this.currentRoom.selectedMonsterIndex = null;
@@ -936,6 +1025,15 @@ class Game {
             // Remaining card(s) will be discarded when entering next room
             this.currentRoom.roomComplete = true;
             this.ranLastRoom = false;
+            
+            console.log('✅ ROOM COMPLETE:', {
+                roomNumber: this.player.roomNumber,
+                cardsProcessed: this.currentRoom.processedIndices.length,
+                hp: this.player.hp,
+                deckRemaining: this.deck.remaining(),
+                discardPile: this.discardPile.length,
+                ranLastRoom: this.ranLastRoom
+            });
             
             this.logger.logAction('room-complete', {
                 roomNumber: this.player.roomNumber,
