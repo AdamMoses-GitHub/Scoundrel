@@ -315,6 +315,10 @@ class Card {
         return this.rank;
     }
 
+    get name() {
+        return this.getName();
+    }
+
     getName() {
         return `${RankNames[this.rank]} of ${this.suitName()}`;
     }
@@ -338,6 +342,13 @@ class Card {
 
     isPotion() {
         return this.suit === Suit.HEARTS;
+    }
+
+    getType() {
+        if (this.isMonster()) return 'Monster';
+        if (this.isWeapon()) return 'Weapon';
+        if (this.isPotion()) return 'Potion';
+        return 'Unknown';
     }
 
     toString() {
@@ -1033,6 +1044,7 @@ class Game {
             suit: c.suit,
             rank: c.rank,
             name: c.getName(),
+            getType: () => c.getType(),
             toString: c.toString()
         })) : [];
     }

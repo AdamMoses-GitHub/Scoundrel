@@ -16,6 +16,11 @@
     --card-border-radius: 6px;
     --card-padding: 15px;
     --card-border-width: 2px;
+    
+    /* Card type colors */
+    --color-type-monster: #4a4a4a;
+    --color-type-weapon: #d4af37;
+    --color-type-potion: #2d7a2d;
 }
 
 * {
@@ -649,8 +654,16 @@ button:disabled {
     height: 120px;
 }
 
-.monster-card-wrapper .card-name {
+.monster-card-wrapper .card-name,
+.monster-card-wrapper .card-type {
     display: none;
+}
+
+.weapon-status-text {
+    text-align: center;
+    margin: 10px 0;
+    font-size: 0.95em;
+    min-height: 24px;
 }
 
 .combat-choice-buttons {
@@ -877,6 +890,34 @@ button:disabled {
 
 .card.hearts .card-suit {
     color: #c41e3a;
+}
+
+.card-type {
+    font-size: 0.7em;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 3px;
+    margin-top: auto;
+}
+
+/* Type-specific colors based on suit */
+.card.spades .card-type,
+.card.clubs .card-type {
+    background-color: var(--color-type-monster);
+    color: var(--text-primary);
+}
+
+.card.diamonds .card-type {
+    background-color: var(--color-type-weapon);
+    color: var(--bg-dark);
+}
+
+.card.hearts .card-type {
+    background-color: var(--color-type-potion);
+    color: var(--text-primary);
 }
 
 .card-name {

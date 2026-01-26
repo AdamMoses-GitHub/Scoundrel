@@ -50,6 +50,7 @@ class UIBuilder {
             <div class="card ${suitClass} ${clickableClass} ${processedClass}" ${clickHandler}>
                 <div class="card-rank">${card.rank}</div>
                 <div class="card-suit">${card.suit}</div>
+                <div class="card-type">${card.getType()}</div>
                 <div class="card-name">${card.name}</div>
             </div>
         `;
@@ -444,7 +445,7 @@ function updateMonsterDisplay() {
         const damage = Math.max(0, monster.rank - weaponValue);
         weaponStatusText = `<p style="color: var(--accent-gold);">Damage with weapon: ${damage}</p>`;
     }
-    html += weaponStatusText;
+    html += `<div class="weapon-status-text">${weaponStatusText}</div>`;
 
     html += `
         <div class="combat-choice-buttons">
@@ -628,7 +629,25 @@ function startGame() {
 }
 
 function showInstructionsFromMenu() {
+    sessionStorage.setItem('returnTo', 'menu');
     showInstructions();
+}
+
+function showInstructionsFromGame() {
+    sessionStorage.setItem('returnTo', 'game');
+    showInstructions();
+    // Close the menu dropdown
+    const dropdown = document.getElementById('menuDropdownContent');
+    dropdown.classList.remove('show');
+}
+
+function backFromInstructions() {
+    const returnTo = sessionStorage.getItem('returnTo') || 'menu';
+    if (returnTo === 'game') {
+        showGameScreen();
+    } else {
+        showMainMenu();
+    }
 }
 
 function backToMenu() {
