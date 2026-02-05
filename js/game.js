@@ -452,6 +452,22 @@ class Player {
         this.weaponDefeatedMonsters = []; // Reset defeated monsters list
     }
 
+    /**
+     * Determines if equipped weapon can be used against a monster.
+     * 
+     * DEGRADATION RULE: Once a weapon fights a monster, it becomes "locked" to that monster's value.
+     * The weapon can ONLY be used on monsters with LOWER values than the locked maximum.
+     * This represents the weapon becoming dulled/damaged from fighting tough opponents.
+     * 
+     * Example degradation sequence:
+     *   - Diamond 5 (fresh) fights Jack (11) → weapon locks to max value 11
+     *   - Diamond 5 then fights 7 → weapon locks to max value 7 (degraded further)
+     *   - Diamond 5 cannot fight King (13) → 13 > 7 → weapon too weak, must fight barehanded
+     *   - Diamond 5 can still fight 2-6 → all values < 7 → weapon usable
+     * 
+     * @param {number} monsterValue - The monster's rank value (2-14, where Jack=11, Queen=12, King=13, Ace=14)
+     * @returns {boolean} True if weapon can be used (either unused or monsterValue < locked maximum)
+     */
     canUseWeaponOnMonster(monsterValue) {
         if (!this.equippedWeapon) {
             return false; // No weapon equipped
@@ -459,13 +475,30 @@ class Player {
         if (this.weaponMaxMonsterValue === null) {
             return true; // Weapon has never been used, can use on any monster
         }
-        return monsterValue < this.weaponMaxMonsterValue; // Can only use on weaker monsters than previous max
+        // Strict less-than comparison: weapon can only fight weaker monsters than its locked max
+        return monsterValue < this.weaponMaxMonsterValue;
     }
 
+    /**
+     * Updates weapon degradation after defeating a monster.
+     * Records the monster in defeat history and progressively degrades the weapon's maximum usable value.
+     * 
+     * DEGRADATION MECHANIC: Math.min() ensures the weapon progressively weakens.
+     * Each fight locks the weapon to the MINIMUM of (current max, this monster's value).
+     * This means fighting weaker monsters makes the weapon only usable on even weaker future monsters.
+     * 
+     * Example:
+     *   - Diamond 8 fights King (13) → max locks to 13 (can fight 2-12 next)
+     *   - Diamond 8 fights 10 → max locks to min(13, 10) = 10 (can fight 2-9 next)
+     *   - Diamond 8 fights 6 → max locks to min(10, 6) = 6 (can fight 2-5 next)
+     *   - Weapon becomes progressively weaker, never stronger
+     * 
+     * @param {Card} card - The monster card that was defeated (used for rank and tracking)
+     */
     updateWeaponMaxMonsterValue(card) {
         if (!this.equippedWeapon) return;
         
-        // Add to defeated monsters list - store both rank and suit
+        // Add to defeated monsters list - store both rank and suit for display purposes
         this.weaponDefeatedMonsters.push({
             rank: card.rank,
             suit: card.suit
@@ -473,11 +506,34 @@ class Player {
         
         const monsterValue = card.rank;
         if (this.weaponMaxMonsterValue === null) {
+            // First use: lock to this monster's value
             this.weaponMaxMonsterValue = monsterValue;
         } else {
-            // Update to the lower value if this monster is weaker (degradation)
+            // Subsequent uses: degrade to weaker of (current max, this monster)
+            // This is the core degradation mechanic - weapons only get weaker, never stronger
             this.weaponMaxMonsterValue = Math.min(this.weaponMaxMonsterValue, monsterValue);
         }
+    }
+
+    /**
+     * Get comprehensive weapon degradation information.
+     * Provides a unified interface to all weapon state without exposing internal implementation.
+     * 
+     * @returns {Object} Degradation info object containing:
+     *   - isLocked {boolean}: Whether weapon has been used and is degraded
+     *   - maxUsableValue {number|null}: Highest monster value this weapon can fight (null if unused)
+     *   - canFightMonster {Function}: Function to check if weapon can fight a specific monster value
+     *   - degradeWith {Function}: Function to degrade weapon with a defeated monster card
+     *   - defeatedMonsters {Array}: Copy of all monsters defeated by this weapon
+     */
+    getDegradationInfo() {
+        return {
+            isLocked: this.weaponMaxMonsterValue !== null,
+            maxUsableValue: this.weaponMaxMonsterValue,
+            canFightMonster: (monsterValue) => this.canUseWeaponOnMonster(monsterValue),
+            degradeWith: (card) => this.updateWeaponMaxMonsterValue(card),
+            defeatedMonsters: [...this.weaponDefeatedMonsters]
+        };
     }
 
     resetRoomState() {
@@ -789,13 +845,32 @@ class Game {
         // Validate current room exists
         if (!this.currentRoom) {
             this.message = '✗ No room in progress!';
+            this.logger.logAction('invalid-operation', { error: 'No active room', cardIndex });
             console.log('❌ selectCard rejected: No current room');
+            return false;
+        }
+
+        // Validate game state
+        if (this.gameState !== GAME_STATES.CARD_INTERACTION) {
+            this.message = '✗ Cannot select card in current game state!';
+            this.logger.logAction('invalid-operation', { 
+                error: 'Wrong game state', 
+                state: this.gameState,
+                expected: GAME_STATES.CARD_INTERACTION,
+                cardIndex 
+            });
+            console.log('❌ selectCard rejected: Wrong game state', this.gameState);
             return false;
         }
 
         // Validate card index
         if (cardIndex < 0 || cardIndex >= this.currentRoom.cards.length) {
             this.message = '✗ Invalid card selection!';
+            this.logger.logAction('invalid-card-index', { 
+                index: cardIndex, 
+                maxIndex: this.currentRoom.cards.length - 1,
+                cardsInRoom: this.currentRoom.cards.length 
+            });
             console.log('❌ selectCard rejected: Invalid index', cardIndex);
             return false;
         }
@@ -803,6 +878,10 @@ class Game {
         // Check if already processed
         if (this.currentRoom.processedIndices.includes(cardIndex)) {
             this.message = '✗ You already interacted with that card!';
+            this.logger.logAction('duplicate-process-attempt', { 
+                index: cardIndex,
+                processedIndices: this.currentRoom.processedIndices 
+            });
             console.log('❌ selectCard rejected: Card already processed', cardIndex);
             return false;
         }

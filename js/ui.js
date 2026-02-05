@@ -9,6 +9,7 @@
  */
 class UIBuilder {
     static cachedElements = {};
+    static cardRenderCache = new Map();
 
     /**
      * Get or cache a DOM element by ID
@@ -33,6 +34,14 @@ class UIBuilder {
     }
 
     /**
+     * Clear card render cache
+     * Call when transitioning between rooms to invalidate cached card HTML
+     */
+    static clearCardCache() {
+        this.cardRenderCache.clear();
+    }
+
+    /**
      * Build HTML for a single card element
      * @param {Card} card - The card to render
      * @param {number} index - Card position index
@@ -41,19 +50,49 @@ class UIBuilder {
      * @returns {string} HTML string for the card
      */
     static buildCard(card, index, clickable = false, processed = false) {
+        // Generate cache key from card properties and state
+        const cacheKey = `${card.suit}${card.rank}_${index}_${clickable}_${processed}`;
+        
+        // Return cached HTML if available
+        if (this.cardRenderCache.has(cacheKey)) {
+            return this.cardRenderCache.get(cacheKey);
+        }
+        
         const suitClass = UIBuilder.getSuitClass(card.suit);
         const clickHandler = clickable ? `onclick="selectCard(${index})"` : '';
         const clickableClass = clickable ? 'clickable' : '';
         const processedClass = processed ? 'processed' : '';
 
-        return `
-            <div class="card ${suitClass} ${clickableClass} ${processedClass}" ${clickHandler}>
+        // Accessibility attributes
+        const cardType = card.getType();
+        const cardName = card.name;
+        const stateDescription = processed ? 'Already processed' : (clickable ? 'Click to select' : 'Not selectable');
+        const ariaLabel = `${cardType}: ${cardName}. ${stateDescription}`;
+        const ariaDisabled = !clickable;
+        const tabIndex = clickable ? '0' : '-1';
+        const role = clickable ? 'button' : 'article';
+        const ariaPressed = processed ? 'true' : 'false';
+        const keyHandler = clickable ? `onkeydown="handleCardKeyPress(event, ${index})"` : '';
+
+        const html = `
+            <div class="card ${suitClass} ${clickableClass} ${processedClass}" 
+                 ${clickHandler}
+                 role="${role}"
+                 aria-label="${ariaLabel}"
+                 aria-disabled="${ariaDisabled}"
+                 aria-pressed="${ariaPressed}"
+                 tabindex="${tabIndex}"
+                 ${keyHandler}>
                 <div class="card-rank">${card.rank}</div>
                 <div class="card-suit">${card.suit}</div>
-                <div class="card-type">${card.getType()}</div>
-                <div class="card-name">${card.name}</div>
+                <div class="card-type">${cardType}</div>
+                <div class="card-name">${cardName}</div>
             </div>
         `;
+        
+        // Cache the generated HTML
+        this.cardRenderCache.set(cacheKey, html);
+        return html;
     }
 
     /**
@@ -584,6 +623,8 @@ function nextRoom() {
     if (game.gameState === GAME_STATES.GAME_OVER) {
         showGameOverScreen();
     } else {
+        // Clear card cache when transitioning to new room for fresh rendering
+        UIBuilder.clearCardCache();
         game.enterNextRoom();
         updateGameDisplay();
     }
@@ -592,6 +633,7 @@ function nextRoom() {
 function startNewGame() {
     try {
         gameLog = []; // Reset log for new game
+        UIBuilder.clearCardCache(); // Clear card render cache for new game
         newGame();
         updateGameDisplay();
         showGameScreen();
@@ -656,6 +698,19 @@ function backToMenu() {
 
 function exitToMenu() {
     showMainMenu();
+}
+
+/**
+ * Handle keyboard navigation for card selection
+ * Enables Enter and Space keys to select cards for accessibility
+ * @param {KeyboardEvent} event - The keyboard event
+ * @param {number} cardIndex - Index of the card to select
+ */
+function handleCardKeyPress(event, cardIndex) {
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault(); // Prevent page scroll on Space
+        selectCard(cardIndex);
+    }
 }
 
 function toggleMenuDropdown() {
