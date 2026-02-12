@@ -193,10 +193,14 @@ const interactionCountLine = document.getElementById('interactionCountLine');
 const gameContent = document.getElementById('gameContent');
 const weaponDisplay = document.getElementById('weaponDisplay');
 
+// NEW: Helper to get the footer element for class toggling
+const getFooterElement = () => document.querySelector('.game-footer');
+
 // Game log tracking
 let gameLog = [];
 let discardPileOrder = 'newest'; // 'newest' (most recent first) or 'oldest' (oldest first)
 let logReverseOrder = true; // true = newest first, false = oldest first
+let isWeaponFloatingExpanded = false; // Track weapon display state in non-combat
 
 // HP display constants
 const HP_CRITICAL_THRESHOLD = 0.3; // HP bar shows critical (red) at 30% or below
@@ -319,22 +323,22 @@ function updateStatsBar() {
     const discardCount = status.discardCount;
 
     statsBar.innerHTML = `
-        <div class="stat-item">
+        <div class="stat-item stat-room">
             <span class="stat-label">Room</span>
             <span class="stat-value">${status.room}</span>
         </div>
-        <div class="stat-item">
+        <div class="stat-item stat-hp">
             <span class="stat-label">HP</span>
             <div id="hpBar">
                 <div id="hpFill" style="width: ${(status.hp / status.maxHp) * 100}%"></div>
                 <div id="hpText">${status.hp}/${status.maxHp}</div>
             </div>
         </div>
-        <div class="stat-item">
+        <div class="stat-item stat-deck">
             <span class="stat-label">Deck</span>
             <span class="stat-value">${status.deckRemaining}</span>
         </div>
-        <div class="stat-item">
+        <div class="stat-item stat-discard">
             <span class="stat-label">Discard</span>
             <span class="stat-value">${discardCount}</span>
         </div>
@@ -351,6 +355,19 @@ function updateStatsBar() {
     } else {
         hpFill.classList.remove('critical');
     }
+
+    // Dropdown menu content - Re-inject if missing (since innerHTML wipe removes it)
+    // We recreate it every time to ensure it is present after the innerHTML update above
+    const dropdownHtml = `
+        <div id="menuDropdownContent" class="dropdown-content">
+            <a onclick="toggleLogModal()">📋 View Log</a>
+            <a onclick="toggleDiscardModal()">🗑️ View Discard</a>
+            <a onclick="toggleStatsModal()">📊 View Stats</a>
+            <a onclick="showInstructionsFromGame()">📖 Instructions</a>
+            <a onclick="exitToMenu()">← Exit to Menu</a>
+        </div>
+    `;
+    statsBar.insertAdjacentHTML('beforeend', dropdownHtml);
 }
 
 /**
@@ -358,13 +375,47 @@ function updateStatsBar() {
  */
 function updateWeaponDisplay() {
     const game = getGame();
+    const footer = document.querySelector('.game-footer');
 
     // If in combat-choice state, don't update here (updateMonsterDisplay handles it)
     if (game.gameState === GAME_STATES.COMBAT_CHOICE) {
+        if (footer) footer.classList.remove('floating');
         return;
     }
 
-    weaponDisplay.innerHTML = buildWeaponDisplayHtml(game, false);
+    // Non-combat: Enable floating mode
+    if (footer) footer.classList.add('floating');
+
+    if (isWeaponFloatingExpanded) {
+        weaponDisplay.innerHTML = `
+            <div class="floating-weapon-expanded">
+                <button class="close-float-btn" onclick="toggleWeaponFloating(false)" title="Minimize">✖</button>
+                ${buildWeaponDisplayHtml(game, false)}
+            </div>
+        `;
+    } else {
+        const weapon = game.player.equippedWeapon;
+        let content = '';
+        if (weapon) {
+            content = `<span class="mini-weapon-rank">${weapon.rank}</span> <span class="mini-weapon-suit">♦️</span>`;
+            if (game.player.weaponMaxMonsterValue !== null) {
+                content += ` <span class="mini-weapon-limit">(${game.player.weaponMaxMonsterValue})</span>`;
+            }
+        } else {
+            content = `<span class="mini-weapon-none">⚔️ No Weapon</span>`;
+        }
+        
+        weaponDisplay.innerHTML = `
+            <div class="floating-weapon-minimized" onclick="toggleWeaponFloating(true)" title="Show Weapon">
+                ${content}
+            </div>
+        `;
+    }
+}
+
+function toggleWeaponFloating(expand) {
+    isWeaponFloatingExpanded = expand;
+    updateWeaponDisplay();
 }
 
 /**
@@ -457,6 +508,10 @@ function displayCardInteraction() {
  */
 function updateMonsterDisplay() {
     const game = getGame();
+    // Ensure footer is not in floating mode during combat
+    const footer = document.querySelector('.game-footer');
+    if (footer) footer.classList.remove('floating');
+
     const monsterIndex = game.currentRoom.selectedMonsterIndex;
     const monster = game.getRoomCards()[monsterIndex];
     const status = game.getPlayerStatus();

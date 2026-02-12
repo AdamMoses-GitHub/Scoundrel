@@ -117,34 +117,28 @@
             </div>
         </div>
 
-        <!-- Game Screen -->
+        <!-- Game Screen (Grid Layout) -->
         <div id="gameScreen" class="screen">
-            <!-- Stats bar: always visible during game -->
-            <div id="statsBar"></div>
-            
-            <!-- Menu dropdown content (positioned relative to stats bar) -->
-            <div id="menuDropdownContent" class="dropdown-content">
-                <a onclick="toggleLogModal()">📋 View Log</a>
-                <a onclick="toggleDiscardModal()">🗑️ View Discard</a>
-                <a onclick="toggleStatsModal()">📊 View Stats</a>
-                <a onclick="showInstructionsFromGame()">📖 Instructions</a>
-                <a onclick="exitToMenu()">← Exit to Menu</a>
-            </div>
-            
-            <!-- Interaction count line: always visible while in a room -->
-            <div id="interactionCountLine"></div>
+            <header class="game-header">
+                <!-- Stats bar context -->
+                <div id="statsBar"></div>
+                <!-- Interaction Line -->
+                <div id="interactionCountLine"></div>
+            </header>
 
-            <!-- Game content: changes based on phase -->
-            <div id="gameContent">
-                <div id="roomDecisionContent"></div>
-                <div id="cardInteractionContent"></div>
-                <div id="roomCompleteContent"></div>
-            </div>
+            <main class="game-stage">
+                <div id="gameContent">
+                    <div id="roomDecisionContent"></div>
+                    <div id="cardInteractionContent"></div>
+                    <div id="roomCompleteContent"></div>
+                </div>
+            </main>
 
-            <!-- Equipped weapon display -->
-            <div id="weaponDisplay"></div>
+            <footer class="game-footer">
+                <div id="weaponDisplay"></div>
+            </footer>
             
-            <!-- Log modal popup -->
+            <!-- Modals -->
             <div id="logModal" class="modal">
                 <div class="modal-content">
                     <div class="modal-header">
