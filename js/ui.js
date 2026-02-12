@@ -1061,15 +1061,16 @@ function updateDiscardPileDisplay() {
 }
 
 // Close dropdown when clicking outside
-document.addEventListener('click', function(event) {
-    const menuDropdown = document.querySelector('.menu-dropdown');
-    if (menuDropdown && !menuDropdown.contains(event.target)) {
+window.onclick = function(event) {
+    // Check if click was inside the menu button or the dropdown content
+    if (!event.target.closest('.menu-button') && !event.target.closest('.dropdown-content')) {
         const dropdown = document.getElementById('menuDropdownContent');
-        if (dropdown) {
+        if (dropdown && dropdown.classList.contains('show')) {
             dropdown.classList.remove('show');
         }
     }
-});
+}
+
 
 /**
  * Initialize the game and load statistics
