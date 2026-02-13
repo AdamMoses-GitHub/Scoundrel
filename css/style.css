@@ -377,6 +377,20 @@ button:disabled {
     align-items: center; justify-content: center;
 }
 .weapon-card.empty { border-style: dashed; opacity: 0.5; }
+.weapon-monsters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    margin-top: 10px;
+    max-width: 200px;
+}
+.monster-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
 .combat-choice-buttons { display: flex; gap: 10px; margin-top: 10px; }
 .combat-btn { padding: 8px 16px; font-size: 0.9em; background: transparent; border: 1px solid var(--accent-gold); color: var(--accent-gold); cursor: pointer; }
 .combat-btn:hover:not(:disabled) { background: var(--accent-gold); color: var(--bg-dark); }

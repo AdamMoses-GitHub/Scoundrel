@@ -250,7 +250,7 @@ function updateInteractionCountLine() {
     
     // Hide interaction count line in non-room states or during room-decision
     if (game.gameState === GAME_STATES.MENU || game.gameState === GAME_STATES.GAME_OVER || game.gameState === GAME_STATES.ROOM_DECISION) {
-        interactionCountLine.innerHTML = '';
+        interactionCountLine.innerHTML = '&nbsp;';
         return;
     }
     
