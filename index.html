@@ -16,6 +16,7 @@
             <p>A deadly card-based dungeon. Draw strength from steel and healing from nature. But beware – flee twice in a row and you'll be locked in for the next battle.</p>
             <div class="button-group">
                 <button onclick="startGame()">🎲 START GAME</button>
+                <button onclick="showTutorialFromMenu()">🎓 TUTORIAL</button>
                 <button onclick="showInstructionsFromMenu()">📖 INSTRUCTIONS</button>
             </div>
             <div style="margin-top: 40px; color: var(--text-secondary); font-size: 0.9em;">
@@ -116,6 +117,152 @@
 
                 <div class="button-group" style="margin-top: 40px;">
                     <button id="backFromInstructions" onclick="backFromInstructions()">↩️ BACK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TUTORIAL SCREEN -->
+        <div id="tutorial" class="screen">
+            <div class="instructions-header" style="display: flex; flex-direction: column; justify-content: center; align-items: center; border-bottom: 2px solid var(--border-gold); margin-bottom: 20px; padding-bottom: 10px;">
+                <button onclick="backFromTutorial()" style="margin-bottom: 20px;">↩️ BACK</button>
+                <h2 style="border: none; margin: 0; padding: 0;">Tutorial</h2>
+            </div>
+            <div class="tutorial-content">
+                <p>Welcome to the dungeon, Scoundrel. Your goal is simple: <strong>survive the deck</strong>.</p>
+                
+                <h3>The Core Loop</h3>
+                <p>You face a room of <strong>4 cards</strong>. You must interact with (use or discard) at least <strong>3 cards</strong> before you can move to the next room.</p>
+                <div class="tutorial-note">
+                    <strong>Tip:</strong> If the room is too dangerous, you can <strong>Run Away</strong>! But be warned: you cannot run from two rooms in a row.
+                </div>
+
+                <h3>Card Types</h3>
+                <ul>
+                    <li><strong>Monsters (Spades ♠ / Clubs ♣):</strong> Deal damage equal to their value. If you have a weapon equipped, you take (Monster - Weapon) damage.</li>
+                    <li><strong>Weapons (Diamonds ♦):</strong> Equip these to fight. Dealing damage reduces your HP loss.</li>
+                    <li>
+                        <strong>Health Potions (Hearts ♥):</strong> Restore HP. You cannot heal above 20 HP.
+                        <br><em style="color: var(--accent-gold);">Note: Only the first potion you drink in a room heals you. Any others in the same room give 0 HP!</em>
+                    </li>
+                </ul>
+
+                <h3>Example: A Standard Turn</h3>
+                <p>Below is a typical room. Strategic players might try to save a potion for later.</p>
+                <div class="tutorial-example">
+                    <div class="tutorial-card-row">
+                        <!-- Weapon 5 -->
+                        <div class="card diamonds">
+                            <div class="card-rank">5</div>
+                            <div class="card-suit">♦</div>
+                            <div class="card-type">Weapon</div>
+                        </div>
+                        <!-- Potion 4 -->
+                        <div class="card hearts">
+                            <div class="card-rank">4</div>
+                            <div class="card-suit">♥</div>
+                            <div class="card-type">Health</div>
+                        </div>
+                            <!-- Potion 6 -->
+                        <div class="card hearts">
+                            <div class="card-rank">6</div>
+                            <div class="card-suit">♥</div>
+                            <div class="card-type">Health</div>
+                        </div>
+                        <!-- Monster 8 -->
+                        <div class="card spades">
+                            <div class="card-rank">8</div>
+                            <div class="card-suit">♠</div>
+                            <div class="card-type">Monster</div>
+                        </div>
+                    </div>
+                    <p><strong>Option A:</strong> Equip 5♦. Drink 6♥ (Heal 6). Drink 4♥ (Heal 0). Leave 8♠ (Skipped).</p>
+                    <p><strong>Option B (Pro):</strong> Equip 5♦. Drink 6♥ (Heal 6). Fight 8♠ (Take 3 dmg). <strong>Leave 4♥</strong> so it appears in the next room (where it will heal you!).</p>
+                </div>
+
+                <h3>Example: Managing Carry-Over</h3>
+                <p>Any card you do not interact with is placed on top of the deck for the next room.</p>
+                <div class="tutorial-example">
+                    <div class="tutorial-card-row">
+                        <!-- Monster 14 (Dangerous) -->
+                        <div class="card spades">
+                            <div class="card-rank">14</div>
+                            <div class="card-suit">♠</div>
+                            <div class="card-type">Monster</div>
+                        </div>
+                        <!-- Potion 5 -->
+                        <div class="card hearts">
+                            <div class="card-rank">5</div>
+                            <div class="card-suit">♥</div>
+                            <div class="card-type">Health</div>
+                        </div>
+                        <!-- Weapon 3 -->
+                        <div class="card diamonds">
+                            <div class="card-rank">3</div>
+                            <div class="card-suit">♦</div>
+                            <div class="card-type">Weapon</div>
+                        </div>
+                         <!-- Monster 2 -->
+                         <div class="card clubs">
+                            <div class="card-rank">2</div>
+                            <div class="card-suit">♣</div>
+                            <div class="card-type">Monster</div>
+                        </div>
+                    </div>
+                    <p><strong>Scenario:</strong> You have no weapon. The 14♠ deals 14 damage!</p>
+                    <ul>
+                        <li>Interacting with the Potion, Weapon, and Small Monster (2♠) is easy.</li>
+                        <li>You <strong>Skip</strong> the 14♠.</li>
+                        <li><strong>Next Room:</strong> The 14♠ will be the <em>first</em> card you see. You cannot skip it forever, but maybe you'll find a stronger weapon next time!</li>
+                    </ul>
+                </div>
+
+                <h3>Example: When to Run</h3>
+                <p>Sometimes a room is just too deadly. If you haven't fled recently, you can shuffle the entire room back into the deck.</p>
+                <div class="tutorial-example">
+                    <div class="tutorial-card-row">
+                        <div class="card spades"><div class="card-rank">K</div><div class="card-suit">♠</div></div>
+                        <div class="card clubs"><div class="card-rank">Q</div><div class="card-suit">♣</div></div>
+                        <div class="card spades"><div class="card-rank">J</div><div class="card-suit">♠</div></div>
+                        <div class="card hearts"><div class="card-rank">2</div><div class="card-suit">♥</div></div>
+                    </div>
+                    <p><strong>Total Damage:</strong> 33+! Even with a weapon, this is lethal.</p>
+                    <div class="tutorial-note" style="margin: 10px 0;">
+                        <strong>Action:</strong> Press <button style="padding: 2px 8px; font-size: 0.8em;">RUN AWAY</button>. All 4 cards go to the bottom of the deck. But you <strong>must</strong> face the next room.
+                    </div>
+                </div>
+
+                <h3>Example: Weapon Durability</h3>
+                <p>Weapons are fragile. They break if you kill a monster that is <strong>weaker</strong> than the last monster it killed.</p>
+                <div class="tutorial-example">
+                    <div class="tutorial-card-row">
+                            <!-- Weapon 7 (Active) -->
+                            <div class="card diamonds" style="border-color: #fff; transform: scale(1.1);">
+                            <div class="card-rank">7</div>
+                            <div class="card-suit">♦</div>
+                            <div class="card-type">Equipped</div>
+                        </div>
+                            <!-- Monster 6 -->
+                        <div class="card clubs">
+                            <div class="card-rank">6</div>
+                            <div class="card-suit">♣</div>
+                            <div class="card-type">Monster</div>
+                        </div>
+                            <!-- Monster 10 -->
+                        <div class="card clubs">
+                            <div class="card-rank">10</div>
+                            <div class="card-suit">♣</div>
+                            <div class="card-type">Monster</div>
+                        </div>
+                    </div>
+                    <p><strong>Scenario:</strong> You are holding a 7♦ Weapon.</p>
+                    <ul>
+                        <li><strong>Fighting the 10♣:</strong> You take 3 damage (10-7). The weapon survives because 10 is strong.</li>
+                        <li><strong>Fighting the 6♣:</strong> You take 0 damage. However, because 6 is smaller than 7, the <strong>weapon breaks</strong> immediately after!</li>
+                    </ul>
+                </div>
+
+                <div class="button-group" style="margin-top: 40px;">
+                    <button onclick="backFromTutorial()">↩️ BACK</button>
                 </div>
             </div>
         </div>

@@ -123,7 +123,7 @@ button:disabled {
 }
 
 /* ===== INSTRUCTIONS ===== */
-#instructions {
+#instructions, #tutorial {
     flex-direction: column;
     justify-content: flex-start;
     background-color: var(--bg-dark);
@@ -131,7 +131,7 @@ button:disabled {
     padding: 20px;
 }
 
-#instructions h2 {
+#instructions h2, #tutorial h2 {
     color: var(--accent-gold);
     font-size: 2em;
     margin-bottom: 20px;
@@ -516,4 +516,84 @@ button:disabled {
     color: var(--accent-red); 
     background-color: rgba(255,255,255,0.1);
 }
+
+
+/* =========================================
+   TUTORIAL / HOW TO PLAY STYLES
+   ========================================= */
+
+/* Main content container */
+.tutorial-content {
+    max-width: 800px;
+    margin: 0 auto;
+    /* flex: 1;  Removed to allow full page scrolling */
+    color: var(--text-primary);
+    /* overflow-y: auto; Removed so the parent container handles scrolling */
+    padding-right: 15px; 
+}
+.tutorial-content::-webkit-scrollbar { width: 8px; }
+.tutorial-content::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+.tutorial-content::-webkit-scrollbar-thumb { background: var(--border-gold); border-radius: 4px; }
+
+.tutorial-content h3 {
+    color: var(--accent-gold);
+    margin-top: 25px;
+    margin-bottom: 15px;
+    font-size: 1.4em;
+    border-bottom: 1px solid rgba(139, 117, 0, 0.3);
+    padding-bottom: 5px;
+}
+
+.tutorial-content p { margin-bottom: 15px; line-height: 1.6; }
+.tutorial-content ul { margin-left: 20px; margin-bottom: 20px; }
+.tutorial-content li { margin-bottom: 8px; color: var(--text-secondary); }
+
+/* Visual container for examples */
+.tutorial-example {
+    border: 1px solid var(--border-gold);
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    margin: 25px 0;
+    border-radius: var(--card-border-radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Flex row for static cards */
+.tutorial-card-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+/* Smaller card overrides for tutorial */
+.tutorial-card-row .card {
+    max-width: 120px;
+    font-size: 0.8em;
+    pointer-events: none; /* Static display only */
+    cursor: default;
+    box-shadow: none;
+    background-color: var(--bg-card); 
+}
+
+/* Adjust inner card elements for scale */
+.tutorial-card-row .card .card-rank { font-size: 1.5em; }
+.tutorial-card-row .card .card-suit { font-size: 2em; }
+
+/* Note / Pro Tip callout */
+.tutorial-note {
+    background-color: rgba(212, 175, 55, 0.1);
+    border-left: 4px solid var(--accent-gold);
+    color: var(--text-primary);
+    padding: 15px;
+    margin: 20px 0;
+    font-style: italic;
+    border-radius: 0 4px 4px 0;
+}
+.tutorial-note strong { color: var(--accent-gold); font-style: normal; }
 

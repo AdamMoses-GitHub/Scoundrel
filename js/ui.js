@@ -364,6 +364,7 @@ function updateStatsBar() {
             <a onclick="toggleDiscardModal()">🗑️ View Discard</a>
             <a onclick="toggleStatsModal()">📊 View Stats</a>
             <a onclick="showInstructionsFromGame()">📖 Instructions</a>
+            <a onclick="showTutorialFromGame()">🎓 Tutorial</a>
             <a onclick="exitToMenu()">← Exit to Menu</a>
         </div>
     `;
@@ -1081,3 +1082,31 @@ document.addEventListener('DOMContentLoaded', function() {
     
     showMainMenu();
 });
+
+/* TUTORIAL NAVIGATION */
+function showTutorial() {
+    showScreen(document.getElementById('tutorial'));
+}
+
+function showTutorialFromMenu() {
+    sessionStorage.setItem('returnTo', 'menu');
+    showTutorial();
+}
+
+function showTutorialFromGame() {
+    sessionStorage.setItem('returnTo', 'game');
+    showTutorial();
+    // Close the menu dropdown if open
+    const dropdown = document.getElementById('menuDropdownContent');
+    if (dropdown) dropdown.classList.remove('show');
+}
+
+function backFromTutorial() {
+    const returnTo = sessionStorage.getItem('returnTo') || 'menu';
+    if (returnTo === 'game') {
+        showGameScreen();
+    } else {
+        showMainMenu();
+    }
+}
+
