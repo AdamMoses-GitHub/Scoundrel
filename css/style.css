@@ -367,6 +367,9 @@ button:disabled {
 .card.spades .card-suit, .card.clubs .card-suit { color: #aaa; }
 .card-name { font-size: 0.8em; color: var(--text-secondary); text-align: center; }
 .card-type { font-size: 0.7em; text-transform: uppercase; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; }
+.card.diamonds .card-type { background-color: var(--color-type-weapon); color: var(--bg-dark); font-weight: bold; }
+.card.hearts .card-type { background-color: var(--color-type-potion); color: var(--text-primary); }
+.card.spades .card-type, .card.clubs .card-type { background-color: var(--color-type-monster); color: var(--text-primary); }
 
 .weapon-card {
     width: 100px; aspect-ratio: 2/3;
