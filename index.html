@@ -108,7 +108,7 @@
                 <ul>
                     <li>Better weapons significantly reduce damage - prioritize them early</li>
                     <li>Potions are valuable but limited - save them for critical situations</li>
-                    <li>Fleeing shuffles unprocessed cards to the deck bottom, giving you different rooms</li>
+                    <li>Fleeing pushes difficult cards to the end, giving you a chance to heal up first</li>
                     <li>Weapon degradation punishes wasting high weapons on weak monsters - plan ahead</li>
                     <li>High monsters early are deadly barehanded - focus on weapons first</li>
                     <li>Plan for the final room: Don't save potions if you'll face it soon</li>
@@ -217,7 +217,7 @@
                 </div>
 
                 <h3>Example: When to Run</h3>
-                <p>Sometimes a room is just too deadly. If you haven't fled recently, you can shuffle the entire room back into the deck.</p>
+                <p>Sometimes a room is just too deadly. If you haven't fled recently, you can put the entire room at the bottom of the deck.</p>
                 <div class="tutorial-example">
                     <div class="tutorial-card-row">
                         <div class="card spades"><div class="card-rank">K</div><div class="card-suit">♠</div></div>
@@ -227,12 +227,12 @@
                     </div>
                     <p><strong>Total Damage:</strong> 33+! Even with a weapon, this is lethal.</p>
                     <div class="tutorial-note" style="margin: 10px 0;">
-                        <strong>Action:</strong> Press <button style="padding: 2px 8px; font-size: 0.8em;">RUN AWAY</button>. All 4 cards go to the bottom of the deck. But you <strong>must</strong> face the next room.
+                        <strong>Action:</strong> Press <button style="padding: 2px 8px; font-size: 0.8em;">RUN AWAY</button>. All 4 cards go to the bottom of the pile.
                     </div>
                 </div>
 
-                <h3>Example: Weapon Durability</h3>
-                <p>Weapons are fragile. They break if you kill a monster that is <strong>weaker</strong> than the last monster it killed.</p>
+                <h3>Example: Weapon Memory</h3>
+                <p>Weapons don't break, but they get picky. After you use a weapon, it can only be used again on monsters <strong>strictly weaker</strong> than the one you just fought.</p>
                 <div class="tutorial-example">
                     <div class="tutorial-card-row">
                             <!-- Weapon 7 (Active) -->
@@ -241,23 +241,24 @@
                             <div class="card-suit">♦</div>
                             <div class="card-type">Equipped</div>
                         </div>
-                            <!-- Monster 6 -->
-                        <div class="card clubs">
-                            <div class="card-rank">6</div>
-                            <div class="card-suit">♣</div>
-                            <div class="card-type">Monster</div>
-                        </div>
                             <!-- Monster 10 -->
                         <div class="card clubs">
                             <div class="card-rank">10</div>
                             <div class="card-suit">♣</div>
                             <div class="card-type">Monster</div>
                         </div>
+                            <!-- Monster 6 -->
+                        <div class="card clubs">
+                            <div class="card-rank">6</div>
+                            <div class="card-suit">♣</div>
+                            <div class="card-type">Monster</div>
+                        </div>
                     </div>
-                    <p><strong>Scenario:</strong> You are holding a 7♦ Weapon.</p>
+                    <p><strong>Scenario:</strong> You use your 7♦ Weapon to fight both monsters.</p>
                     <ul>
-                        <li><strong>Fighting the 10♣:</strong> You take 3 damage (10-7). The weapon survives because 10 is strong.</li>
-                        <li><strong>Fighting the 6♣:</strong> You take 0 damage. However, because 6 is smaller than 7, the <strong>weapon breaks</strong> immediately after!</li>
+                        <li><strong>Step 1 (Fight 10♣):</strong> Damage is 3 (10-7). The weapon "remembers" 10. Next target must be &lt; 10.</li>
+                        <li><strong>Step 2 (Fight 6♣):</strong> 6 is &lt; 10, so it works! Damage is 0. The weapon now "remembers" 6. Next target must be &lt; 6.</li>
+                        <li><strong>The Trap:</strong> If you meet an 8♣ later, you <strong>cannot</strong> use the weapon (8 is not &lt; 6). You must fight barehanded!</li>
                     </ul>
                 </div>
 
