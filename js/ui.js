@@ -228,6 +228,7 @@ function showScreen(screenElement) {
 
 function showMainMenu() {
     showScreen(mainMenuScreen);
+    setRandomTagline();
 }
 
 function showInstructions() {
@@ -1079,7 +1080,8 @@ window.onclick = function(event) {
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize StatsManager and load persisted stats from localStorage
     StatsManager.getInstance().updateDisplay();
-    
+
+    setRandomTagline();
     showMainMenu();
 });
 
@@ -1108,5 +1110,51 @@ function backFromTutorial() {
     } else {
         showMainMenu();
     }
+}
+
+/**
+ * Menu taglines - random flavour text shown on the main menu each visit
+ */
+const MENU_TAGLINES = [
+    // Weapon degradation focus
+    "Your blade remembers every monster it's slain — and gets weaker for it. 44 cards. One life. No second retreats.",
+    "Steel dulls. Potions are scarce. And you can never run twice in a row.",
+    "A dungeon of 44 cards. Equip weapons that degrade, ration your healing, and choose your battles — you can't always walk away.",
+    "Every weapon has a memory. Every potion has a limit. Every escape has a cost.",
+    "Your sword grows tired. Your potions grow fewer. The deck grows thinner. So do your options.",
+    // Flee mechanic focus
+    "Run once — maybe. Run twice — never. 44 cards stand between you and survival.",
+    "You can't flee twice in a row. The dungeon won't let you.",
+    "Courage isn't optional. Neither is the monster waiting in the next room.",
+    "The deck is shuffled. The door behind you just locked. You can leave — once.",
+    "Retreat is a tactic. Retreating again is a death wish.",
+    // Tension / atmosphere
+    "44 cards. 20 HP. Zero mercy.",
+    "The deck is stacked. So is the dungeon.",
+    "Every room is a decision. Every decision costs something.",
+    "Survive the deck. That's all. That's everything.",
+    "It's just cards. It's never just cards.",
+    "Shuffle in. Limp out — if you're lucky.",
+    "The dungeon doesn't care about your strategy. Make one anyway.",
+    "You have a weapon, some luck, and very little time.",
+    "Draw cards. Take damage. Die later than expected.",
+    "The monsters don't negotiate. Neither does your HP.",
+    // Tactical flavour
+    "A Diamond reduces damage. A Heart restores it. A Club or Spade removes it entirely.",
+    "Equip wisely. A weapon used on a King can never touch an Ace.",
+    "Fight barehanded and feel every blow. Fight smart and only feel some of them.",
+    "The Ace of Spades hits for 14. Your best weapon hits for 10. Plan accordingly.",
+    "Potions heal. But only the first one per room. The dungeon has rules.",
+    "Skip the potion now. Carry it into the next room. Or die regretting it.",
+    "Weapons cap out at 10. Monsters don't.",
+    "A Diamond 10 won't save you from an Ace of Clubs forever.",
+    "You get 3 interactions per room. Choose wisely. The fourth card carries over.",
+    "Fight. Heal. Equip. Flee. Repeat until you can't."
+];
+
+function setRandomTagline() {
+    const el = document.getElementById('menuTagline');
+    if (!el) return;
+    el.textContent = MENU_TAGLINES[Math.floor(Math.random() * MENU_TAGLINES.length)];
 }
 
